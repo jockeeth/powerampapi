@@ -56,7 +56,7 @@ public abstract class WidgetUpdater {
 	private static boolean sUpdatedOnce;
 
 	public static final IntentFilter sTrackFilter = new IntentFilter(PowerampAPI.ACTION_TRACK_CHANGED);
-	public static final IntentFilter sAAFilter = USE_AA_EVENT ? new IntentFilter(PowerampAPI.ACTION_AA_CHANGED) : null;
+	public static final IntentFilter sAAFilter = WidgetUpdater.USE_AA_EVENT ? new IntentFilter(PowerampAPI.ACTION_AA_CHANGED) : null;
 	public static final IntentFilter sStatusFilter = new IntentFilter(PowerampAPI.ACTION_STATUS_CHANGED);
 	public static final IntentFilter sModeFilter = new IntentFilter(PowerampAPI.ACTION_PLAYING_MODE_CHANGED);
 
@@ -72,27 +72,27 @@ public abstract class WidgetUpdater {
 	/**
 	 * Used by PS to push updates, usually all providers added in constructor of the derived class
 	 */
-	public WidgetUpdater(Context context) {
+    protected WidgetUpdater(final Context context) {
 		long start;
-		if(LOG) start = System.nanoTime();
+		if(WidgetUpdater.LOG) start = System.nanoTime();
 		
-		PowerManager powerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
-		if(powerManager == null) throw new AssertionError();
-		mPowerManager = powerManager;
+		final PowerManager powerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
+		if(null == powerManager) throw new AssertionError();
+        this.mPowerManager = powerManager;
 
-		mContext = context; // NOTE: PS context ATM
+        this.mContext = context; // NOTE: PS context ATM
 		
-		if(LOG) Log.w(TAG, "ctor in=" + (System.nanoTime() - start) / 1000);
+		if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "ctor in=" + (System.nanoTime() - start) / 1000);
 	} 
 
 	/**
 	 * Per-single provider ctor, used for cases when provider is called by system
 	 */
-	public WidgetUpdater(Context context, @NonNull BaseWidgetProvider prov) {
+    protected WidgetUpdater(final Context context, @NonNull final BaseWidgetProvider prov) {
 		this(context);
 
-		synchronized(mLock) {
-			mProviders.add(prov);
+		synchronized(this.mLock) {
+            this.mProviders.add(prov);
 		}
 	}
 
@@ -101,37 +101,37 @@ public abstract class WidgetUpdater {
 	 * Called just for given provider 
 	 */
 	// THREADING: any
-	public void updateSafe(@NonNull BaseWidgetProvider provider, boolean ignorePowerState, boolean updateByOs, int[] appWidgetIds) {
-		if(LOG) Log.w(TAG, "updateSafe th=" + Thread.currentThread() + " provider=" + provider); 
+	public void updateSafe(@NonNull final BaseWidgetProvider provider, final boolean ignorePowerState, final boolean updateByOs, final int[] appWidgetIds) {
+		if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "updateSafe th=" + Thread.currentThread() + " provider=" + provider);
 
-		synchronized(mLock) {
-			if(!ignorePowerState && !mPowerManager.isInteractive() && sUpdatedOnce){
-				if(LOG) Log.e(TAG, "skipping update, screen is off");
+		synchronized(this.mLock) {
+			if(!ignorePowerState && !this.mPowerManager.isInteractive() && WidgetUpdater.sUpdatedOnce){
+				if(WidgetUpdater.LOG) Log.e(WidgetUpdater.TAG, "skipping update, screen is off");
 				return;
 			}
 
-			WidgetUpdateData data = generateUpdateData(mContext);
+			final WidgetUpdateData data = this.generateUpdateData(this.mContext);
 
-			if(LOG) Log.w(TAG, "========== updateSafe UPDATE data=" + data);
+			if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "========== updateSafe UPDATE data=" + data);
 
-			pushUpdateCore(data, appWidgetIds);
+            this.pushUpdateCore(data, appWidgetIds);
 		}
 
-		if(LOG) Log.w(TAG, "update done ");
+		if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "update done ");
 	}
 
-	private void pushUpdateCore(@NonNull WidgetUpdateData data, int[] ids) {
-		if(LOG) Log.w(TAG, "pushUpdateCore ids=" + Arrays.toString(ids) + " data=" + data +  " mProviders.length=" + mProviders.size());
+	private void pushUpdateCore(@NonNull final WidgetUpdateData data, final int[] ids) {
+		if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "pushUpdateCore ids=" + Arrays.toString(ids) + " data=" + data +  " mProviders.length=" + this.mProviders.size());
 
-		SharedPreferences prefs = getCachedSharedPreferences(mContext);
+		final SharedPreferences prefs = WidgetUpdater.getCachedSharedPreferences(this.mContext);
 
-		for(IWidgetUpdater prov : mProviders) {
-			prov.pushUpdate(mContext, prefs, ids, false, data); // Media never removed, not changing signature for now
+		for(final IWidgetUpdater prov : this.mProviders) {
+			prov.pushUpdate(this.mContext, prefs, ids, false, data); // Media never removed, not changing signature for now
 		}
 
-		if(data.hasTrack && !sUpdatedOnce) {
-			if(LOG) Log.w(TAG, "pushUpdateCore sUpdatedOnce=>true");
-			sUpdatedOnce = true;
+		if(data.hasTrack && !WidgetUpdater.sUpdatedOnce) {
+			if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "pushUpdateCore sUpdatedOnce=>true");
+            WidgetUpdater.sUpdatedOnce = true;
 		}
 	}
 
@@ -139,19 +139,19 @@ public abstract class WidgetUpdater {
 	 * Called by ExternalAPI
 	 * @return true if update happened, false if power state doesn't allow update now
 	 */
-	public boolean updateDirectSafe(@NonNull WidgetUpdateData data, boolean ignorePowerState, boolean isScreenOn) {
-		synchronized(mLock) {
-			if(!ignorePowerState && !isScreenOn && sUpdatedOnce){
-				if(LOG) Log.e(TAG, "updateDirectSafe skipping update, screen is off");
+	public boolean updateDirectSafe(@NonNull final WidgetUpdateData data, final boolean ignorePowerState, final boolean isScreenOn) {
+		synchronized(this.mLock) {
+			if(!ignorePowerState && !isScreenOn && WidgetUpdater.sUpdatedOnce){
+				if(WidgetUpdater.LOG) Log.e(WidgetUpdater.TAG, "updateDirectSafe skipping update, screen is off");
 				return false;
 			}
 
-			if(LOG) Log.w(TAG, "updateDirectSafe data=" + data + " th=" + Thread.currentThread()); // + " extras=" + intent == null ? null : Arrays.toString(intent.getExtras().keySet().toArray(new String[]{})));
+			if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "updateDirectSafe data=" + data + " th=" + Thread.currentThread()); // + " extras=" + intent == null ? null : Arrays.toString(intent.getExtras().keySet().toArray(new String[]{})));
 
-			pushUpdateCore(data, null);
+            this.pushUpdateCore(data, null);
 		}
 
-		if(LOG) Log.w(TAG, "update done ");
+		if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "update done ");
 
 		return true;
 	}
@@ -160,18 +160,18 @@ public abstract class WidgetUpdater {
 	// from context 2 times
 	// THREADING: any
 	@SuppressWarnings("null")
-	public static @NonNull SharedPreferences getCachedSharedPreferences(Context context) {
-		SharedPreferences cachedPrefs = sCachedPrefs;
-		if(cachedPrefs == null) {
+	public static @NonNull SharedPreferences getCachedSharedPreferences(final Context context) {
+		SharedPreferences cachedPrefs = WidgetUpdater.sCachedPrefs;
+		if(null == cachedPrefs) {
 			// NOTE: getting Poweramp shared prefs implementation via explicit app context
-			Context app = context.getApplicationContext();
-			cachedPrefs = sCachedPrefs = app.getSharedPreferences(WIDGETS_PREFS_NAME, 0);
+			final Context app = context.getApplicationContext();
+			cachedPrefs = WidgetUpdater.sCachedPrefs = app.getSharedPreferences(WidgetUpdater.WIDGETS_PREFS_NAME, 0);
 		}
 		return cachedPrefs;
 	}
 
 	/** NOTE: we're using #WIDGTS_PREFS_NAME now for widgets, but we still expose previous name to allow prefs code to migrate */
-	public static String getOldSharedPreferencesName(Context context) {
+	public static String getOldSharedPreferencesName(final Context context) {
 		return context.getPackageName() + "_appwidgets";
 	}
 
@@ -185,30 +185,30 @@ public abstract class WidgetUpdater {
 	 * Generates WidgetUpdateData from sticky intents
 	 */
 	// Data should be always the same for any type of widgets as data is reused by other widgets, thus method is final.
-	public @NonNull WidgetUpdateData generateUpdateData(Context context) {
-		WidgetUpdateData data = new WidgetUpdateData();
+	public @NonNull WidgetUpdateData generateUpdateData(final Context context) {
+		final WidgetUpdateData data = new WidgetUpdateData();
 
-		if(ALWAYS_USE_PERSISTANT_DATA) {
+		if(WidgetUpdater.ALWAYS_USE_PERSISTANT_DATA) {
 			// Still check for actual playing status, as persistent data is stored per track change, thus never reflects playing state
 			// Do it before loadDefaultOrPersistantUpdateData
-			getPlayingState(context, data);
+            this.getPlayingState(context, data);
 
-			loadDefaultOrPersistantUpdateData(context, data);
+            this.loadDefaultOrPersistantUpdateData(context, data);
 
 			return data;
 		}
 
-		Bundle track;
+		final Bundle track;
 
-		Intent trackIntent = context.registerReceiver(null, WidgetUpdater.sTrackFilter);
+		final Intent trackIntent = context.registerReceiver(null, sTrackFilter);
 
-		if(LOG) Log.w(TAG, "generateUpdateData trackIntent=" + trackIntent);
+		if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "generateUpdateData trackIntent=" + trackIntent);
 
 
-		if(trackIntent != null) {
+		if(null != trackIntent) {
 			track = trackIntent.getParcelableExtra(PowerampAPI.EXTRA_TRACK);
 
-			if(track != null) {
+			if(null != track) {
 				data.hasTrack = true;
 				data.title = track.getString(PowerampAPI.Track.TITLE);
 				data.album = track.getString(PowerampAPI.Track.ALBUM);
@@ -217,15 +217,15 @@ public abstract class WidgetUpdater {
 				data.posInList = track.getInt(PowerampAPI.Track.POS_IN_LIST);
 				data.supportsCatNav = track.getBoolean(PowerampAPI.Track.SUPPORTS_CAT_NAV);
 				data.flags = track.getInt(PowerampAPI.Track.FLAGS);
-				if(LOG) Log.w(TAG, "received trackIntent data=" + data);
+				if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "received trackIntent data=" + data);
 
 			} else {
-				loadDefaultOrPersistantUpdateData(context, data);
+                this.loadDefaultOrPersistantUpdateData(context, data);
 				return data;
 			}
 		} else {
 			// No any intent stored, need to get some defaults or previously saved persistent data 
-			loadDefaultOrPersistantUpdateData(context, data);
+            this.loadDefaultOrPersistantUpdateData(context, data);
 			return data;
 		}
 
@@ -244,28 +244,28 @@ public abstract class WidgetUpdater {
 //			}
 //		}
 
-		getPlayingState(context, data);
+        this.getPlayingState(context, data);
 
-		Intent modeIntent = context.registerReceiver(null, WidgetUpdater.sModeFilter);
-		if(modeIntent != null) {
+		final Intent modeIntent = context.registerReceiver(null, sModeFilter);
+		if(null != modeIntent) {
 			data.shuffle = modeIntent.getIntExtra(PowerampAPI.EXTRA_SHUFFLE, PowerampAPI.ShuffleMode.SHUFFLE_NONE);
 			data.repeat = modeIntent.getIntExtra(PowerampAPI.EXTRA_REPEAT, PowerampAPI.RepeatMode.REPEAT_NONE);
-			if(LOG) Log.w(TAG, "repeat=" + data.repeat + " shuffle=" + data.shuffle);
+			if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "repeat=" + data.repeat + " shuffle=" + data.shuffle);
 		}
 		return data;
 	}
 
 	@SuppressWarnings("static-method")
-	private void getPlayingState(Context context, @NonNull WidgetUpdateData data) {
-		Intent statusIntent = context.registerReceiver(null, WidgetUpdater.sStatusFilter);
-		if(statusIntent != null) {
+	private void getPlayingState(final Context context, @NonNull final WidgetUpdateData data) {
+		final Intent statusIntent = context.registerReceiver(null, sStatusFilter);
+		if(null != statusIntent) {
 
-			boolean paused = statusIntent.getBooleanExtra(PowerampAPI.EXTRA_PAUSED, true);
+			final boolean paused = statusIntent.getBooleanExtra(PowerampAPI.EXTRA_PAUSED, true);
 			data.playing = !paused;
 
 			data.apiVersion = statusIntent.getIntExtra(PowerampAPI.EXTRA_API_VERSION, 0);
 
-			if(LOG) Log.w(TAG, "getPlayingState statusIntent=" + statusIntent + " paused=" + paused + " playing=" + data.playing);
-		} else if(LOG)  Log.e(TAG, "getPlayingState statusIntent==null");
+			if(WidgetUpdater.LOG) Log.w(WidgetUpdater.TAG, "getPlayingState statusIntent=" + statusIntent + " paused=" + paused + " playing=" + data.playing);
+		} else if(WidgetUpdater.LOG)  Log.e(WidgetUpdater.TAG, "getPlayingState statusIntent==null");
 	}
 }

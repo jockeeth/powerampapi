@@ -4,8 +4,9 @@ package com.maxmpz.poweramp.player;
 import org.eclipse.jdt.annotation.NonNull;
 
 
-public final class PaSampleFormat {
-	public static final int PA_SAMPLE_FMT_NONE     = -1;
+public enum PaSampleFormat {
+    ;
+    public static final int PA_SAMPLE_FMT_NONE     = -1;
 
 	public static final int PA_SAMPLE_FMT_U8       = 0;      ///< unsigned 8 bits
 	public static final int PA_SAMPLE_FMT_S16      = 1;      ///< signed 16 bits
@@ -28,86 +29,85 @@ public final class PaSampleFormat {
 	public static final int PA_SAMPLE_FMT_NB       = 22;
 
 
-	public static boolean isValidFormat(int format, boolean allowReserve) {
-		if(format < 0) return false;
-		if(format >= PA_SAMPLE_FMT_NB) return false;
-		if(!allowReserve && format > PA_SAMPLE_FMT_S64P && format < PA_SAMPLE_FMT_S24) return false;
-		return true;
-	}
+	public static boolean isValidFormat(final int format, final boolean allowReserve) {
+		if(0 > format) return false;
+		if(PA_SAMPLE_FMT_NB <= format) return false;
+        return allowReserve || PA_SAMPLE_FMT_S64P >= format || PA_SAMPLE_FMT_S24 <= format;
+    }
 
 	/** This is storage bits per given sample */
-	public static int getBitsPerSample(int sampleFormat) {
+	public static int getBitsPerSample(final int sampleFormat) {
 		switch(sampleFormat) {
 			default:
-			case PA_SAMPLE_FMT_NONE:
+			case PaSampleFormat.PA_SAMPLE_FMT_NONE:
 				return 0;
-			case PA_SAMPLE_FMT_U8:
+			case PaSampleFormat.PA_SAMPLE_FMT_U8:
 				return 8;
-			case PA_SAMPLE_FMT_S16:
+			case PaSampleFormat.PA_SAMPLE_FMT_S16:
 				return 16;
-			case PA_SAMPLE_FMT_S32:
+			case PaSampleFormat.PA_SAMPLE_FMT_S32:
 				return 32;
-			case PA_SAMPLE_FMT_FLT:
+			case PaSampleFormat.PA_SAMPLE_FMT_FLT:
 				return 32;
-			case PA_SAMPLE_FMT_DBL:
+			case PaSampleFormat.PA_SAMPLE_FMT_DBL:
 				return 64;
-			case PA_SAMPLE_FMT_U8P:
+			case PaSampleFormat.PA_SAMPLE_FMT_U8P:
 				return 8;
-			case PA_SAMPLE_FMT_S16P:
+			case PaSampleFormat.PA_SAMPLE_FMT_S16P:
 				return 16;
-			case PA_SAMPLE_FMT_S32P:
+			case PaSampleFormat.PA_SAMPLE_FMT_S32P:
 				return 32;
-			case PA_SAMPLE_FMT_FLTP:
+			case PaSampleFormat.PA_SAMPLE_FMT_FLTP:
 				return 32;
-			case PA_SAMPLE_FMT_DBLP:
+			case PaSampleFormat.PA_SAMPLE_FMT_DBLP:
 				return 64;
-			case PA_SAMPLE_FMT_S24:
+			case PaSampleFormat.PA_SAMPLE_FMT_S24:
 				return 24;
-			case PA_SAMPLE_FMT_S8_24:
+			case PaSampleFormat.PA_SAMPLE_FMT_S8_24:
 				return 32;
-			case PA_SAMPLE_FMT_S64:
-			case PA_SAMPLE_FMT_S64P:
+			case PaSampleFormat.PA_SAMPLE_FMT_S64:
+			case PaSampleFormat.PA_SAMPLE_FMT_S64P:
 				return 64;
 		}
 	}
 
 	/** This is storage bits per given sample */
-	public static int getBytesPerSample(int sampleFormat) {
-		return getBitsPerSample(sampleFormat) / 8;
+	public static int getBytesPerSample(final int sampleFormat) {
+		return PaSampleFormat.getBitsPerSample(sampleFormat) / 8;
 	}
 
 	/** This is significant range bits per given sample, i.e. 24 for Float32 or S8_24 */
-	public static int getSignificantBitsPerSample(int sampleFormat) {
+	public static int getSignificantBitsPerSample(final int sampleFormat) {
 		switch(sampleFormat) {
 			default:
-			case PA_SAMPLE_FMT_NONE:
+			case PaSampleFormat.PA_SAMPLE_FMT_NONE:
 				return 0;
-			case PA_SAMPLE_FMT_U8:
+			case PaSampleFormat.PA_SAMPLE_FMT_U8:
 				return 8;
-			case PA_SAMPLE_FMT_S16:
+			case PaSampleFormat.PA_SAMPLE_FMT_S16:
 				return 16;
-			case PA_SAMPLE_FMT_S32:
+			case PaSampleFormat.PA_SAMPLE_FMT_S32:
 				return 32;
-			case PA_SAMPLE_FMT_FLT:
+			case PaSampleFormat.PA_SAMPLE_FMT_FLT:
 				return 24;
-			case PA_SAMPLE_FMT_FLTP:
+			case PaSampleFormat.PA_SAMPLE_FMT_FLTP:
 				return 24;
-			case PA_SAMPLE_FMT_DBL:
+			case PaSampleFormat.PA_SAMPLE_FMT_DBL:
 				return 53;
-			case PA_SAMPLE_FMT_U8P:
+			case PaSampleFormat.PA_SAMPLE_FMT_U8P:
 				return 8;
-			case PA_SAMPLE_FMT_S16P:
+			case PaSampleFormat.PA_SAMPLE_FMT_S16P:
 				return 16;
-			case PA_SAMPLE_FMT_S32P:
+			case PaSampleFormat.PA_SAMPLE_FMT_S32P:
 				return 32;
-			case PA_SAMPLE_FMT_DBLP:
+			case PaSampleFormat.PA_SAMPLE_FMT_DBLP:
 				return 53;
-			case PA_SAMPLE_FMT_S24:
+			case PaSampleFormat.PA_SAMPLE_FMT_S24:
 				return 24;
-			case PA_SAMPLE_FMT_S8_24: // This is Q8.23
+			case PaSampleFormat.PA_SAMPLE_FMT_S8_24: // This is Q8.23
 				return 24; // NOTE: not sure about this, actually this is closer to normal float, thus this is 24 bit
-			case PA_SAMPLE_FMT_S64:
-			case PA_SAMPLE_FMT_S64P:
+			case PaSampleFormat.PA_SAMPLE_FMT_S64:
+			case PaSampleFormat.PA_SAMPLE_FMT_S64P:
 				return 53;
 		}
 	}

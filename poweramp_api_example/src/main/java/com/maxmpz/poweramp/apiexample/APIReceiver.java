@@ -34,20 +34,20 @@ public class APIReceiver extends BroadcastReceiver {
 	private static final String TAG = "APIReceiver";
 
 	@Override
-	public void onReceive(Context context, Intent intent) {
-		String action = intent.getAction();
-		if(action != null) {
+	public void onReceive(final Context context, final Intent intent) {
+		final String action = intent.getAction();
+		if(null != action) {
 			switch(action) {
 				case PowerampAPI.ACTION_STATUS_CHANGED_EXPLICIT:
-					MainActivity.debugDumpIntent(TAG, "ACTION_STATUS_CHANGED_EXPLICIT", intent);
+					MainActivity.debugDumpIntent(APIReceiver.TAG, "ACTION_STATUS_CHANGED_EXPLICIT", intent);
 					break;
 
 				case PowerampAPI.ACTION_TRACK_CHANGED_EXPLICIT:
-					MainActivity.debugDumpIntent(TAG, "ACTION_TRACK_CHANGED_EXPLICIT", intent);
+					MainActivity.debugDumpIntent(APIReceiver.TAG, "ACTION_TRACK_CHANGED_EXPLICIT", intent);
 					break;
 
 				default:
-					MainActivity.debugDumpIntent(TAG, "UNKNOWN", intent);
+					MainActivity.debugDumpIntent(APIReceiver.TAG, "UNKNOWN", intent);
 					break;
 			}
 		}

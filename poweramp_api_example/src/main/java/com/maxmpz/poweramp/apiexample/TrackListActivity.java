@@ -28,7 +28,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
@@ -37,19 +36,19 @@ import com.maxmpz.poweramp.player.PowerampAPIHelper;
 import com.maxmpz.poweramp.player.TableDefs;
 
 @SuppressWarnings("deprecation")
-public class TrackListActivity extends ListActivity implements OnItemClickListener {
+public class TrackListActivity extends ListActivity implements AdapterView.OnItemClickListener {
 	private static final String TAG = "TrackListActivity";
 	private Uri mUri;
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState){
+	protected void onCreate(final Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.activity_tracklist);
 
-		mUri = getIntent().getData();
+        this.mUri = this.getIntent().getData();
 
-		Cursor c = this.getContentResolver().query(mUri,
+		final Cursor c = getContentResolver().query(this.mUri,
 				new String[]{ "folder_files._id AS _id",
 						TableDefs.Files.TITLE_TAG + " AS title_tag", // NOTE: AS ... is needed for SimpleCursorAdapter, we probably don't need for our real custom adapters
 						TableDefs.Artists.ARTIST + " AS artist"
@@ -57,27 +56,27 @@ public class TrackListActivity extends ListActivity implements OnItemClickListen
 				null,
 				null,
 				null); // NOTE: using null as order argument - this results in user selected sorting - the same way as shown in Poweramp list
-		if(c != null) startManagingCursor(c);
+		if(null != c) this.startManagingCursor(c);
 
-		SimpleCursorAdapter adapter = new SimpleCursorAdapter(
+		final SimpleCursorAdapter adapter = new SimpleCursorAdapter(
 				this, // Context.
 				android.R.layout.two_line_list_item,
 				c,
 				new String[] { "title_tag", "artist" },
 				new int[] {android.R.id.text1, android.R.id.text2},
 				0);
-		setListAdapter(adapter);
+        this.setListAdapter(adapter);
 
-		ListView list = (ListView)findViewById(android.R.id.list);
+		final ListView list = this.findViewById(android.R.id.list);
 		list.setOnItemClickListener(this);
 	}
 
 	@Override
-	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long id) {
-		Uri uri = mUri.buildUpon()
+	public void onItemClick(final AdapterView<?> arg0, final View arg1, final int arg2, final long id) {
+		final Uri uri = this.mUri.buildUpon()
 				.appendEncodedPath(Long.toString(id))
 				.build();
-		Log.w(TAG, "onItemClick uri=>" + uri);
+		Log.w(TrackListActivity.TAG, "onItemClick uri=>" + uri);
 
 		PowerampAPIHelper.sendPAIntent(this, new Intent(PowerampAPI.ACTION_API_COMMAND)
 				.putExtra(PowerampAPI.EXTRA_COMMAND, PowerampAPI.Commands.OPEN_TO_PLAY)

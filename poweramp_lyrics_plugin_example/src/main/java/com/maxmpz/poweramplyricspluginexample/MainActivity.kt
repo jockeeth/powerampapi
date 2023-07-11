@@ -60,9 +60,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         logTv = findViewById<TextView>(R.id.log)
-        logTv?.setMovementMethod(ScrollingMovementMethod())
+        logTv?.movementMethod = ScrollingMovementMethod()
 
-        val intent = getIntent()
+        val intent = intent
         if(intent != null && intent.action == PowerampAPI.Lyrics.ACTION_LYRICS_LINK
                 && !intent.getBooleanExtra("__processed", false)
         ) {
@@ -126,7 +126,7 @@ class MainActivity : Activity() {
                         val lrc = trackId % 3 != 0L // Generate non-lrc for third of realIds
 
                         val isStream = fileType == PowerampAPI.Track.FileType.TYPE_STREAM
-                        if(isStream && durationMs <= 0) durationMs = 60 * 1000; // Let's use some fake duration for our generateFakeLyrics
+                        if(isStream && durationMs <= 0) durationMs = 60 * 1000 // Let's use some fake duration for our generateFakeLyrics
 
                         DebugLines.addDebugLine("generating lyrics for trackId=$trackId lrc=$lrc title=$title artist=$artist album=$album" +
                                 " dur=$durationMs ")
@@ -134,7 +134,7 @@ class MainActivity : Activity() {
                         val lyrics = generateFakeLyrics(lrc, "DIRECT:$title", artist, album, durationMs)
 
                         // Inject some info line for even ids
-                        val infoLine: String? = "DIRECTLY updated lyrics by Poweramp Plugin Example (realId=$trackId)"
+                        val infoLine: String = "DIRECTLY updated lyrics by Poweramp Plugin Example (realId=$trackId)"
 
                         if(sendLyricsResponse(this@MainActivity, trackId, lyrics, infoLine)) {
                             error = null

@@ -54,96 +54,96 @@ public class RemoteTrackTime {
 
 
 	public interface TrackTimeListener {
-		public void onTrackDurationChanged(int duration);
-		public void onTrackPositionChanged(int position);
+		void onTrackDurationChanged(int duration);
+		void onTrackPositionChanged(int position);
 	}
 
 	TrackTimeListener mTrackTimeListener;
 
 
-	public RemoteTrackTime(Context context) {
-		mContext = context;
+	public RemoteTrackTime(final Context context) {
+        this.mContext = context;
 	}
 
 	public void registerAndLoadStatus() {
-		IntentFilter filter = new IntentFilter(PowerampAPI.ACTION_TRACK_POS_SYNC);
-		mContext.registerReceiver(mTrackPosSyncReceiver, filter);
+		final IntentFilter filter = new IntentFilter(PowerampAPI.ACTION_TRACK_POS_SYNC);
+        this.mContext.registerReceiver(this.mTrackPosSyncReceiver, filter);
 
-		PowerampAPIHelper.sendPAIntent(mContext, new Intent(PowerampAPI.ACTION_API_COMMAND)
+		PowerampAPIHelper.sendPAIntent(this.mContext, new Intent(PowerampAPI.ACTION_API_COMMAND)
 						.putExtra(PowerampAPI.EXTRA_COMMAND, PowerampAPI.Commands.POS_SYNC));
 
-		if(mPlaying) {
-			mHandler.removeCallbacks(mTickRunnable);
-			mHandler.postDelayed(mTickRunnable, 0);
+		if(this.mPlaying) {
+            this.mHandler.removeCallbacks(this.mTickRunnable);
+            this.mHandler.postDelayed(this.mTickRunnable, 0);
 		}
 	}
 
 	public void unregister() {
 		try {
-			mContext.unregisterReceiver(mTrackPosSyncReceiver);
-		} catch(Exception ignored) { }
-		mHandler.removeCallbacks(mTickRunnable);
+            this.mContext.unregisterReceiver(this.mTrackPosSyncReceiver);
+		} catch(final Exception ignored) { }
+        this.mHandler.removeCallbacks(this.mTickRunnable);
 	}
 
 	private final @NonNull BroadcastReceiver mTrackPosSyncReceiver = new BroadcastReceiver() {
 		@Override
-		public void onReceive(Context context, Intent intent) {
-			int pos = intent.getIntExtra(PowerampAPI.Track.POSITION, 0);
-			if(LOG) Log.w(TAG, "mTrackPosSyncReceiver sync=" + pos);
-			updateTrackPosition(pos);
+		public void onReceive(final Context context, final Intent intent) {
+			final int pos = intent.getIntExtra(PowerampAPI.Track.POSITION, 0);
+			if(RemoteTrackTime.LOG) Log.w(RemoteTrackTime.TAG, "mTrackPosSyncReceiver sync=" + pos);
+            RemoteTrackTime.this.updateTrackPosition(pos);
 		}
 
 	};
 
-	public void setTrackTimeListener(TrackTimeListener l) {
-		mTrackTimeListener = l;
+	public void setTrackTimeListener(final TrackTimeListener l) {
+        this.mTrackTimeListener = l;
 	}
 
-	public void updateTrackDuration(int duration) {
-		if(mTrackTimeListener != null) {
-			mTrackTimeListener.onTrackDurationChanged(duration);
+	public void updateTrackDuration(final int duration) {
+		if(null != mTrackTimeListener) {
+            this.mTrackTimeListener.onTrackDurationChanged(duration);
 		}
 	}
 
-	public void updateTrackPosition(int position) {
-		mPosition = position;
-		if(LOG) Log.w(TAG, "updateTrackPosition mPosition=>" + mPosition);
-		if(mPlaying) {
-			mStartTimeMs = System.currentTimeMillis();
-			mStartPosition = mPosition;
+	public void updateTrackPosition(final int position) {
+        this.mPosition = position;
+		if(RemoteTrackTime.LOG) Log.w(RemoteTrackTime.TAG, "updateTrackPosition mPosition=>" + this.mPosition);
+		if(this.mPlaying) {
+            this.mStartTimeMs = System.currentTimeMillis();
+            this.mStartPosition = this.mPosition;
 		}
-		if(mTrackTimeListener != null) {
-			mTrackTimeListener.onTrackPositionChanged(position);
+		if(null != mTrackTimeListener) {
+            this.mTrackTimeListener.onTrackPositionChanged(position);
 		}
 	}
 
 	protected final Runnable mTickRunnable = new Runnable() {
 		@Override
 		public void run() {
-			mPosition = (int)(System.currentTimeMillis() - mStartTimeMs + 500) / 1000 + mStartPosition;
-			if(LOG) Log.w(TAG, "mTickRunnable mPosition=" + mPosition);
-			if(mTrackTimeListener != null) {
-				mTrackTimeListener.onTrackPositionChanged(mPosition);
+            RemoteTrackTime.this.mPosition = (int)(System.currentTimeMillis() - RemoteTrackTime.this.mStartTimeMs + 500) / 1000 + RemoteTrackTime.this.mStartPosition;
+			if(RemoteTrackTime.LOG) Log.w(RemoteTrackTime.TAG, "mTickRunnable mPosition=" + RemoteTrackTime.this.mPosition);
+			if(null != mTrackTimeListener) {
+                RemoteTrackTime.this.mTrackTimeListener.onTrackPositionChanged(RemoteTrackTime.this.mPosition);
 			}
-			mHandler.removeCallbacks(mTickRunnable);
-			mHandler.postDelayed(mTickRunnable, UPDATE_DELAY);
+            RemoteTrackTime.this.mHandler.removeCallbacks(RemoteTrackTime.this.mTickRunnable);
+            RemoteTrackTime.this.mHandler.postDelayed(RemoteTrackTime.this.mTickRunnable, RemoteTrackTime.UPDATE_DELAY);
 		}
 	};
 
 	public void startSongProgress() {
-		if(!mPlaying) {
-			mStartTimeMs = System.currentTimeMillis();
-			mStartPosition = mPosition;
-			mHandler.removeCallbacks(mTickRunnable);
-			mHandler.postDelayed(mTickRunnable, UPDATE_DELAY);
-			mPlaying = true;
+		if(!this.mPlaying) {
+            this.mStartTimeMs = System.currentTimeMillis();
+            this.mStartPosition = this.mPosition;
+            this.mHandler.removeCallbacks(this.mTickRunnable);
+            this.mHandler.postDelayed(this.mTickRunnable, RemoteTrackTime.UPDATE_DELAY);
+            this.mPlaying = true;
 		}
 	}
 
 	public void stopSongProgress() {
-		if(mPlaying) {
-			mHandler.removeCallbacks(mTickRunnable);
-			mPlaying = false;
+		if(this.mPlaying) {
+            this.mHandler.removeCallbacks(this.mTickRunnable);
+            this.mPlaying = false;
 		}
 	}
 }

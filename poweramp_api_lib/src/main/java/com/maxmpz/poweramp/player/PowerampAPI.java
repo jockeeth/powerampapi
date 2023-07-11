@@ -93,8 +93,9 @@ import org.eclipse.jdt.annotation.NonNull;
  * </ul>
  */
 @SuppressWarnings({"WeakerAccess", "Unused"})
-public final class PowerampAPI {
-	/**
+public enum PowerampAPI {
+    ;
+    /**
 	 * Defines PowerampAPI version
 	 */
 	public static final int VERSION = 855;
@@ -122,7 +123,7 @@ public final class PowerampAPI {
 	/**
 	 * Root data provider uri
 	 */
-	public static final Uri ROOT_URI = new Uri.Builder().scheme("content").authority(AUTHORITY).build();
+	public static final Uri ROOT_URI = new Uri.Builder().scheme("content").authority(PowerampAPI.AUTHORITY).build();
 
 	/**
 	 * Authority used for album art provider
@@ -131,7 +132,7 @@ public final class PowerampAPI {
 	/**
 	 * Root album art provider uri
 	 */
-	public static final Uri AA_ROOT_URI = new Uri.Builder().scheme("content").authority(AA_AUTHORITY).build();
+	public static final Uri AA_ROOT_URI = new Uri.Builder().scheme("content").authority(PowerampAPI.AA_AUTHORITY).build();
 
 	/**
 	 * AA_AUTHORITY accepted parameter - get HD image. Default is true.
@@ -221,8 +222,9 @@ public final class PowerampAPI {
 	 * Command values for {@link #EXTRA_COMMAND} extra.<br>
 	 * Alternatively, Commands field name can be used instead of integer value, e.g. "PAUSE", instead of 2
 	 */
-	public static final class Commands {
-		/**
+	public enum Commands {
+        ;
+        /**
 		 * Extras:<br>
 		 * {@code boolean keepService} - (optional) if true, Poweramp won't unload player service. Notification will be appropriately updated<br>
 		 * {@code boolean beep} - (optional) if true, Poweramp will beep on playback command
@@ -596,65 +598,65 @@ public final class PowerampAPI {
 		public static final int SET_VIS_PRESET = 200;
 		
 		
-		public static @NonNull String cmdToString(int cmd) {
+		public static @NonNull String cmdToString(final int cmd) {
 			switch(cmd) {
-				case TOGGLE_PLAY_PAUSE:
+				case Commands.TOGGLE_PLAY_PAUSE:
 					return "TOGGLE_PLAY_PAUSE";
-				case PAUSE:
+				case Commands.PAUSE:
 					return "PAUSE";
-				case RESUME:
+				case Commands.RESUME:
 					return "RESUME";
-				case NEXT:
+				case Commands.NEXT:
 					return "NEXT";
-				case PREVIOUS:
+				case Commands.PREVIOUS:
 					return "PREVIOUS";
-				case NEXT_IN_CAT:
+				case Commands.NEXT_IN_CAT:
 					return "NEXT_IN_CAT";
-				case PREVIOUS_IN_CAT:
+				case Commands.PREVIOUS_IN_CAT:
 					return "PREVIOUS_IN_CAT";
-				case REPEAT:
+				case Commands.REPEAT:
 					return "REPEAT";
-				case SHUFFLE:
+				case Commands.SHUFFLE:
 					return "SHUFFLE";
-				case BEGIN_FAST_FORWARD:
+				case Commands.BEGIN_FAST_FORWARD:
 					return "BEGIN_FAST_FORWARD";
-				case END_FAST_FORWARD:
+				case Commands.END_FAST_FORWARD:
 					return "END_FAST_FORWARD";
-				case BEGIN_REWIND:
+				case Commands.BEGIN_REWIND:
 					return "BEGIN_REWIND";
-				case END_REWIND:
+				case Commands.END_REWIND:
 					return "END_REWIND";
-				case STOP:
+				case Commands.STOP:
 					return "STOP";
-				case SEEK:
+				case Commands.SEEK:
 					return "SEEK";
-				case POS_SYNC:
+				case Commands.POS_SYNC:
 					return "POS_SYNC";
-				case OPEN_TO_PLAY:
+				case Commands.OPEN_TO_PLAY:
 					return "OPEN_TO_PLAY";
-				case SET_EQU_PRESET:
+				case Commands.SET_EQU_PRESET:
 					return "SET_EQU_PRESET";
-				case SET_EQU_STRING:
+				case Commands.SET_EQU_STRING:
 					return "SET_EQU_STRING";
-				case SET_EQU_BAND:
+				case Commands.SET_EQU_BAND:
 					return "SET_EQU_BAND";
-				case SET_EQU_ENABLED:
+				case Commands.SET_EQU_ENABLED:
 					return "SET_EQU_ENABLED";
-				case STOP_SERVICE:
+				case Commands.STOP_SERVICE:
 					return "STOP_SERVICE";
-				case SLEEP_TIMER:
+				case Commands.SLEEP_TIMER:
 					return "SLEEP_TIMER";
-				case SET_VIS_PRESET:
+				case Commands.SET_VIS_PRESET:
 					return "SET_VIS_PRESET";
-				case LIKE:
+				case Commands.LIKE:
 					return "LIKE";
-				case UNLIKE:
+				case Commands.UNLIKE:
 					return "UNLIKE";
-				case TOGGLE_RATING:
+				case Commands.TOGGLE_RATING:
 					return "TOGGLE_RATING";
-				case SEEK_JUMP_FORWARD:
+				case Commands.SEEK_JUMP_FORWARD:
 					return "SEEK_JUMP_FORWARD";
-				case SEEK_JUMP_BACKWARD:
+				case Commands.SEEK_JUMP_BACKWARD:
 					return "SEEK_JUMP_BACKWARD";
 
 				default:
@@ -929,7 +931,7 @@ public final class PowerampAPI {
 	 * {@code String name} - preset name. If no name extra exists, it's not a preset<br>
 	 * {@code long id} - preset id. If no id extra exists, it's not a preset<br>
 	 * {@code String value} - equalizer and tone values in format:<br>
-	 * <blockquote><code>bass=pos_float|treble=pos_float|31=float|62=float|....|16K=float|preamp=0.0 ... 2.0</code><br>
+	 * <blockquote>{@code bass=pos_float|treble=pos_float|31=float|62=float|....|16K=float|preamp=0.0 ... 2.0}<br>
 	 * where float = -1.0 ... 1.0, pos_float = 0.0 ... 1.0</blockquote>
 	 * {@code boolean equ} - true if equalizer bands are enabled<br>
 	 * {@code boolean tone} - true if tone bands are enabled<br>
@@ -1234,8 +1236,9 @@ public final class PowerampAPI {
 	/**
 	 * Shuffle extras values
 	 */
-	public static final class ShuffleMode {
-		/**
+	public enum ShuffleMode {
+        ;
+        /**
 		 * No any shuffle selected
 		 */
 		public static final int SHUFFLE_NONE		   = 0;
@@ -1265,20 +1268,21 @@ public final class PowerampAPI {
 		 */
 		public static final int SHUFFLE_SONGS_HIER     = 5;
 		
-		public static boolean areSongsShuffled(int shuffle) {
-			return shuffle == SHUFFLE_ALL || shuffle == SHUFFLE_SONGS || shuffle == SHUFFLE_SONGS_AND_CATS;
+		public static boolean areSongsShuffled(final int shuffle) {
+			return SHUFFLE_ALL == shuffle || SHUFFLE_SONGS == shuffle || SHUFFLE_SONGS_AND_CATS == shuffle;
 		}
 
-		public static boolean areCatsShuffled(int shuffle) {
-			return shuffle == SHUFFLE_CATS || shuffle == SHUFFLE_SONGS_AND_CATS;
+		public static boolean areCatsShuffled(final int shuffle) {
+			return SHUFFLE_CATS == shuffle || SHUFFLE_SONGS_AND_CATS == shuffle;
 		}
 	}
 
 	/**
 	 * Repeat extras values
 	 */
-	public static final class RepeatMode {
-		/**
+	public enum RepeatMode {
+        ;
+        /**
 		 * Repeat is disabled
 		 */
 		public static final int REPEAT_NONE	   = 0;
@@ -1312,8 +1316,9 @@ public final class PowerampAPI {
 	/**
 	 * Vis extras values
 	 */
-	public static final class VisMode {
-		/**
+	public enum VisMode {
+        ;
+        /**
 		 * Visualization is disabled
 		 */
 		public static final int VIS_NONE        = 0;
@@ -1336,8 +1341,9 @@ public final class PowerampAPI {
 	 * Since build 948 all these fields are also exposed to {@link #ACTION_TRACK_CHANGED} and {@link #ACTION_TRACK_CHANGED_EXPLICIT}
 	 * extras directly.
 	 */
-	public static final class Track {
-		/**
+	public enum Track {
+        ;
+        /**
 		 * Max number to use for filename numbers, e.g. 1-track.mp3 is considered a track #1, but 100-track.mp3 is not
 		 */
 		public static final int MAX_FILE_NUMBER = 99;
@@ -1509,8 +1515,9 @@ public final class PowerampAPI {
 		/**
 		 * {@link PowerampAPI.Track} {@link #FILE_TYPE} values
 		 */
-		public static class FileType {
-			public static final int TYPE_UNKNOWN    = -1;
+		public enum FileType {
+            ;
+            public static final int TYPE_UNKNOWN    = -1;
 			public static final int TYPE_MP3        = 0;
 			public static final int TYPE_FLAC       = 1;
 			public static final int TYPE_M4A        = 2;
@@ -1545,46 +1552,47 @@ public final class PowerampAPI {
 		 */
 		public interface Flags {
 			/** Track wasn't advanced */
-			public static final int FLAG_ADVANCE_NONE            = 0;
+            int FLAG_ADVANCE_NONE            = 0;
 
 			/** Track was advanced forward */
-			public static final int FLAG_ADVANCE_FORWARD         = 0x1;
+            int FLAG_ADVANCE_FORWARD         = 0x1;
 
 			/** Track was advanced backward */
-			public static final int FLAG_ADVANCE_BACKWARD        = 0x2;
+            int FLAG_ADVANCE_BACKWARD        = 0x2;
 
 			/** Track category was advanced forward */
-			public static final int FLAG_ADVANCE_FORWARD_CAT     = 0x3;
+            int FLAG_ADVANCE_FORWARD_CAT     = 0x3;
 
 			/** Track category was advanced backward */
-			public static final int FLAG_ADVANCE_BACKWARD_CAT    = 0x4;
+            int FLAG_ADVANCE_BACKWARD_CAT    = 0x4;
 
 			/**
 			 * Track is manually selected by user from the list
 			 */
-			public static final int FLAG_ADVANCE_BY_USER         = 0x5;
+            int FLAG_ADVANCE_BY_USER         = 0x5;
 
 			/** Mask for FLAG_ADVANCE_* values */
-			public static final int FLAG_ADVANCE_MASK            = 0x7;
+            int FLAG_ADVANCE_MASK            = 0x7;
 
 			/**
 			 * Track was advanced from the notification.<br>
 			 * If set, event comes from the notification ui and we will animate aa update then
 			 */
-			public static final int FLAG_NOTIFICATION_UI         = 0x20;
+            int FLAG_NOTIFICATION_UI         = 0x20;
 
 			/** Indicates the track is the first in Poweramp service session */
-			public static final int FLAG_FIRST_IN_PLAYER_SESSION = 0x40;
+            int FLAG_FIRST_IN_PLAYER_SESSION = 0x40;
 
 			/**
 			 * The track failed to load for any reason
 			 * @since 948
 			 */
-			public static final int FLAG_FAILED                  = 0x80;
+            int FLAG_FAILED                  = 0x80;
 		}
 
-		public static final class TagStatus {
-			public static final int TAG_NOT_SCANNED = 0;
+		public enum TagStatus {
+            ;
+            public static final int TAG_NOT_SCANNED = 0;
 			public static final int TAG_SCANNED = 1;
 
 			/** Currently used only for LRC files */
@@ -1595,8 +1603,9 @@ public final class PowerampAPI {
 		 * Values for {@link #LYRICS_STATE}
 		 * @since 948
 		 */
-		public static final class LyricsState {
-			/**
+		public enum LyricsState {
+            ;
+            /**
 			 * No lyrics detected or cached for the track
 			 * @since 948
 			 */
@@ -1621,8 +1630,9 @@ public final class PowerampAPI {
 	/**
 	 * {@link PowerampAPI.Track} {@link PowerampAPI.Track#CAT} categories
 	 */
-	public static final class Cats {
-		/** Root library category. Not used in Poweramp v3. */
+	public enum Cats {
+        ;
+        /** Root library category. Not used in Poweramp v3. */
 		@Deprecated
 		public static final int ROOT                    = 0;
 
@@ -1667,16 +1677,16 @@ public final class PowerampAPI {
 		public static final int RECENTLY_ADDED          = 53;
 		public static final int LONG                    = 55;
 
-		private Cats() {}
-	}
+    }
 
 	/**
 	 * Describes Poweramp scanner related actions.<br>
 	 * Use {@link PowerampAPIHelper#getScannerServiceComponentName} to get component name for the intent. Intents should be send with Context#startService<br>
 	 * Please note that service won't start/scan if your application is not foreground, or if Poweramp is not in the foreground, or if Poweramp is not actively playing. 
 	 */
-	public static final class Scanner {
-		/**
+	public enum Scanner {
+        ;
+        /**
 		 * Sent by your app to Poweramp.<br>
 		 * Poweramp Scanner action.<br><br>
 		 *
@@ -1900,8 +1910,9 @@ public final class PowerampAPI {
 	 * Use {@link PowerampAPIHelper#getScannerServiceComponentName} to get component name for the intent. Intents should be send with Context#startService<br>
 	 * Please note that service won't start/scan if your application is not foreground, or if Poweramp is not in the foreground, or if Poweramp is not actively playing. 
 	 */
-	public static class MilkScanner {
-		/**
+	public enum MilkScanner {
+        ;
+        /**
 		 * Sent by your app to Poweramp. Should be sent to {@link PowerampAPIHelper#getMilkScannerServiceComponentName} service via startService (deprecated),
 		 * or (since 868) to {@link #API_ACTIVITY_NAME} via startActivity or {@link #API_RECEIVER_NAME} via sendBroadcast<br>
 		 * Extras:<br>
@@ -1936,8 +1947,9 @@ public final class PowerampAPI {
 	 *
 	 * @since 948
 	 */
-	public static class Lyrics {
-		/**
+	public enum Lyrics {
+        ;
+        /**
 		 * Sent by Poweramp to your app when lyrics are required for the track.<br>
 		 * Sent, for example, when track has no lyrics, but lyrics mode is enabled, or
 		 * when user explicitly requesting the lyrics for a track.<br><br>
@@ -2020,8 +2032,9 @@ public final class PowerampAPI {
 	/**
 	 * Settings related actions
 	 */
-	public static class Settings {
-		/**
+	public enum Settings {
+        ;
+        /**
 		 * Poweramp settings activity
 		 */
 		public static final String ACTIVITY_SETTINGS = PowerampAPI.ACTIVITY_SETTINGS;
@@ -2139,8 +2152,9 @@ public final class PowerampAPI {
 		public static class Preferences {
 		}
 		
-		public static class PreferencesConsts {
-			/** 
+		public enum PreferencesConsts {
+            ;
+            /**
 			 * Don't show vis<br>
 			 */
 			public static final int VIS_MODE_VIS_NONE = 0; 
@@ -2176,7 +2190,7 @@ public final class PowerampAPI {
 	 */
 	@SuppressWarnings("deprecation")
 	@Deprecated
-	public static final ComponentName PLAYER_SERVICE_COMPONENT_NAME = new ComponentName(PACKAGE_NAME, PLAYER_SERVICE_NAME);
+	public static final ComponentName PLAYER_SERVICE_COMPONENT_NAME = new ComponentName(PowerampAPI.PACKAGE_NAME, PowerampAPI.PLAYER_SERVICE_NAME);
 
 	/**
 	 * @return ready to use Intent for Poweramp service
@@ -2185,7 +2199,7 @@ public final class PowerampAPI {
 	@SuppressWarnings("deprecation")
 	@Deprecated
 	public static Intent newAPIIntent() {
-		return new Intent(ACTION_API_COMMAND).setComponent(PLAYER_SERVICE_COMPONENT_NAME);
+		return new Intent(PowerampAPI.ACTION_API_COMMAND).setComponent(PowerampAPI.PLAYER_SERVICE_COMPONENT_NAME);
 	}
 
 	/**
@@ -2421,8 +2435,9 @@ public final class PowerampAPI {
 	 * @deprecated use ACTION_STATUS_CHANGED
 	 */
 	@Deprecated
-	public static final class Status {
-		/**
+	public enum Status {
+        ;
+        /**
 		 * STATUS_CHANGED status value - track has been started to play or has been paused.<br>
 		 * Note that Poweramp will start track immediately into this state when it's just loaded to avoid STARTED => PAUSED transition.<br>
 		 * Additional extras - deprecated since 790 - not sent anymore:<br>

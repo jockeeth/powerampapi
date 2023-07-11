@@ -20,8 +20,6 @@ import android.os.ParcelFileDescriptor;
 import android.os.ProxyFileDescriptorCallback;
 import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
-import android.provider.DocumentsContract.Root;
-import android.provider.DocumentsContract.Document;
 import android.provider.DocumentsProvider;
 import android.provider.MediaStore;
 import android.system.ErrnoException;
@@ -104,7 +102,7 @@ public class ExampleProvider extends DocumentsProvider {
 	private static final long DUBSTEP_FAKE_FLAC_SIZE = 14000000;
 
 	// ~116 bytes per ms in the real bensound-dubstep.flac, but "fake" value is an approximation
-	private static final long DUBSTEP_FAKE_AVERAGE_BYTES_PER_MS = Math.round((float)DUBSTEP_FAKE_FLAC_SIZE / (float) DUBSTEP_DURATION_MS);
+	private static final long DUBSTEP_FAKE_AVERAGE_BYTES_PER_MS = 112;
 
 	/** If > 0, we'll force-stop the playback after these bytes played. Works for seekable sockets/PA protocol */
 	private static final long DEBUG_STOP_PROTOCOL_AFTER_BYTES = 0; // e.g. = 500000
@@ -120,23 +118,23 @@ public class ExampleProvider extends DocumentsProvider {
 
 
 	/** Default columns returned for roots */
-	private static final String[] DEFAULT_ROOT_PROJECTION =	new String[] {
-			Root.COLUMN_ROOT_ID,
-			Root.COLUMN_TITLE,
-			Root.COLUMN_SUMMARY,
-			Root.COLUMN_FLAGS,
-			Root.COLUMN_ICON,
-			Root.COLUMN_DOCUMENT_ID,
+	private static final String[] DEFAULT_ROOT_PROJECTION = {
+			DocumentsContract.Root.COLUMN_ROOT_ID,
+			DocumentsContract.Root.COLUMN_TITLE,
+			DocumentsContract.Root.COLUMN_SUMMARY,
+			DocumentsContract.Root.COLUMN_FLAGS,
+			DocumentsContract.Root.COLUMN_ICON,
+			DocumentsContract.Root.COLUMN_DOCUMENT_ID,
 	};
 
 	/** Default columns returned for documents - folders and tracks (not including metadata) */
-	private static final String[] DEFAULT_DOCUMENT_PROJECTION = new String[] {
-			Document.COLUMN_DOCUMENT_ID,
-			Document.COLUMN_MIME_TYPE,
-			Document.COLUMN_DISPLAY_NAME,
-			Document.COLUMN_LAST_MODIFIED,
-			Document.COLUMN_FLAGS,
-			Document.COLUMN_SIZE,
+	private static final String[] DEFAULT_DOCUMENT_PROJECTION = {
+			DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+			DocumentsContract.Document.COLUMN_MIME_TYPE,
+			DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+			DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+			DocumentsContract.Document.COLUMN_FLAGS,
+			DocumentsContract.Document.COLUMN_SIZE,
 	};
 
 	/**
@@ -149,21 +147,21 @@ public class ExampleProvider extends DocumentsProvider {
 	 * NOTE: if TITLE and DURATION are missing, Poweramp also won't use thumbnail API (even if FLAG_SUPPORTS_THUMBNAIL is set). Instead Poweramp reads cover directly
 	 * from track (via another openDocument call)
 	 */
-	private static final String[] DEFAULT_TRACK_AND_METADATA_PROJECTION = new String[] {
-			Document.COLUMN_DOCUMENT_ID,
-			Document.COLUMN_MIME_TYPE,
-			Document.COLUMN_DISPLAY_NAME,
-			Document.COLUMN_LAST_MODIFIED,
-			Document.COLUMN_FLAGS,
-			Document.COLUMN_SIZE,
+	private static final String[] DEFAULT_TRACK_AND_METADATA_PROJECTION = {
+			DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+			DocumentsContract.Document.COLUMN_MIME_TYPE,
+			DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+			DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+			DocumentsContract.Document.COLUMN_FLAGS,
+			DocumentsContract.Document.COLUMN_SIZE,
 
 			MediaStore.MediaColumns.TITLE,
-			MediaStore.Audio.AudioColumns.DURATION,
-			MediaStore.Audio.AudioColumns.ARTIST,
-			MediaStore.Audio.AudioColumns.ALBUM,
+            MediaStore.MediaColumns.DURATION,
+            MediaStore.MediaColumns.ARTIST,
+            MediaStore.MediaColumns.ALBUM,
 			MediaStore.Audio.AudioColumns.YEAR,
 			TrackProviderConsts.COLUMN_ALBUM_ARTIST,
-			MediaStore.Audio.AudioColumns.COMPOSER,
+            MediaStore.MediaColumns.COMPOSER,
 			TrackProviderConsts.COLUMN_GENRE,
 			MediaStore.Audio.AudioColumns.TRACK,
 			TrackProviderConsts.COLUMN_TRACK_ALT,
@@ -181,69 +179,69 @@ public class ExampleProvider extends DocumentsProvider {
 	public boolean onCreate() {
 		// Code to retrieve own apk install time. We use this here as lastModified. Not needed for real providers which can retrieve lastModified from the
 		// content itself (either from network or filesystem)
-		PackageManager pm = getContext().getPackageManager();
+		final PackageManager pm = this.getContext().getPackageManager();
 		try {
-			PackageInfo pakInfo = pm.getPackageInfo(getContext().getApplicationInfo().packageName, 0);
-			mApkInstallTime = pakInfo.lastUpdateTime > 0 ? pakInfo.lastUpdateTime : pakInfo.firstInstallTime;
+			final PackageInfo pakInfo = pm.getPackageInfo(this.getContext().getApplicationInfo().packageName, 0);
+            this.mApkInstallTime = 0 < pakInfo.lastUpdateTime ? pakInfo.lastUpdateTime : pakInfo.firstInstallTime;
 
-			if(LOG) Log.w(TAG, "onCreate mApkInstallTime=" + mApkInstallTime);
-		} catch(PackageManager.NameNotFoundException ex) {
-			Log.e(TAG, "", ex);
-			mApkInstallTime = System.currentTimeMillis();
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "onCreate mApkInstallTime=" + this.mApkInstallTime);
+		} catch(final PackageManager.NameNotFoundException ex) {
+			Log.e(ExampleProvider.TAG, "", ex);
+            this.mApkInstallTime = System.currentTimeMillis();
 		}
 
-		if(USE_MP3_COPY) {
+		if(ExampleProvider.USE_MP3_COPY) {
 			// Extract our mp3s to storage as Poweramp won't properly play asset apk fd (fd points to apk itself, so Poweramp tries to play the apk file itself,
 			// basically playing first found mp3 from it)
-			File dir = getContext().getFilesDir();
-			copyAsset("bensound-dubstep.mp3", dir, false);
-			copyAsset("bensound-dubstep.flac", dir, false);
-			copyAsset("bensound-summer.mp3", dir, false);
-			copyAsset("streams-playlist.m3u8", dir, false);
+			final File dir = this.getContext().getFilesDir();
+            this.copyAsset("bensound-dubstep.mp3", dir, false);
+            this.copyAsset("bensound-dubstep.flac", dir, false);
+            this.copyAsset("bensound-summer.mp3", dir, false);
+            this.copyAsset("streams-playlist.m3u8", dir, false);
 		}
 
 		return true;
 	}
 
 	@Override
-	public Cursor queryRoots(String[] projection) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "queryRoots projection=" + Arrays.toString(projection));
+	public Cursor queryRoots(final String[] projection) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "queryRoots projection=" + Arrays.toString(projection));
 		try {
 
-			MatrixCursor c = new MatrixCursor(resolveRootProjection(projection));
+			final MatrixCursor c = new MatrixCursor(ExampleProvider.resolveRootProjection(projection));
 			MatrixCursor.RowBuilder row;
 
 			// Items without metadata provided by the provider (Poweramp reads track metadata from track itself)
 			row = c.newRow();
-			row.add(Root.COLUMN_ROOT_ID, "rootId1");
-			row.add(Root.COLUMN_TITLE, "Root 1");
-			row.add(Root.COLUMN_SUMMARY, "Poweramp Example Provider");
-			row.add(Root.COLUMN_FLAGS, Root.FLAG_SUPPORTS_IS_CHILD); // Required
-			row.add(Root.COLUMN_ICON, R.mipmap.ic_launcher);
-			row.add(Root.COLUMN_DOCUMENT_ID, "root1");
+			row.add(DocumentsContract.Root.COLUMN_ROOT_ID, "rootId1");
+			row.add(DocumentsContract.Root.COLUMN_TITLE, "Root 1");
+			row.add(DocumentsContract.Root.COLUMN_SUMMARY, "Poweramp Example Provider");
+			row.add(DocumentsContract.Root.COLUMN_FLAGS, DocumentsContract.Root.FLAG_SUPPORTS_IS_CHILD); // Required
+			row.add(DocumentsContract.Root.COLUMN_ICON, R.mipmap.ic_launcher);
+			row.add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, "root1");
 
 			// Items with metadata (Poweramp gets metadata from cursor and doesn't try to read tags from tracks)
 			row = c.newRow();
-			row.add(Root.COLUMN_ROOT_ID, "rootId2");
-			row.add(Root.COLUMN_TITLE, "Root 2");
-			row.add(Root.COLUMN_SUMMARY, "Poweramp Example Provider");
-			row.add(Root.COLUMN_FLAGS, Root.FLAG_SUPPORTS_IS_CHILD); // Required
-			row.add(Root.COLUMN_ICON, R.mipmap.ic_launcher);
-			row.add(Root.COLUMN_DOCUMENT_ID, "root2");
+			row.add(DocumentsContract.Root.COLUMN_ROOT_ID, "rootId2");
+			row.add(DocumentsContract.Root.COLUMN_TITLE, "Root 2");
+			row.add(DocumentsContract.Root.COLUMN_SUMMARY, "Poweramp Example Provider");
+			row.add(DocumentsContract.Root.COLUMN_FLAGS, DocumentsContract.Root.FLAG_SUPPORTS_IS_CHILD); // Required
+			row.add(DocumentsContract.Root.COLUMN_ICON, R.mipmap.ic_launcher);
+			row.add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, "root2");
 
 			// Streams: m3u8 playlist, http stream with the duration, http no-duration stream (radio)
 			row = c.newRow();
-			row.add(Root.COLUMN_ROOT_ID, "rootId3");
-			row.add(Root.COLUMN_TITLE, "Root 3 (Streams)");
-			row.add(Root.COLUMN_SUMMARY, "Poweramp Example Provider");
-			row.add(Root.COLUMN_FLAGS, Root.FLAG_SUPPORTS_IS_CHILD); // Required
-			row.add(Root.COLUMN_ICON, R.mipmap.ic_launcher);
-			row.add(Root.COLUMN_DOCUMENT_ID, "root3");
+			row.add(DocumentsContract.Root.COLUMN_ROOT_ID, "rootId3");
+			row.add(DocumentsContract.Root.COLUMN_TITLE, "Root 3 (Streams)");
+			row.add(DocumentsContract.Root.COLUMN_SUMMARY, "Poweramp Example Provider");
+			row.add(DocumentsContract.Root.COLUMN_FLAGS, DocumentsContract.Root.FLAG_SUPPORTS_IS_CHILD); // Required
+			row.add(DocumentsContract.Root.COLUMN_ICON, R.mipmap.ic_launcher);
+			row.add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, "root3");
 
 			return c;
 
-		} catch(Throwable th) {
-			Log.e(TAG, "", th);
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "", th);
 		}
 		return null;
 	}
@@ -256,8 +254,8 @@ public class ExampleProvider extends DocumentsProvider {
 	 *   - in this case Poweramp will ask for extra fields, such as lyrics/synced lyrics<br>
 	 */
 	@Override
-	public Cursor queryDocument(String documentId, String[] projection) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "queryDocument documentId=" + documentId + " projection=" + Arrays.toString(projection));
+	public Cursor queryDocument(final String documentId, final String[] projection) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "queryDocument documentId=" + documentId + " projection=" + Arrays.toString(projection));
 
 		try {
 
@@ -266,119 +264,119 @@ public class ExampleProvider extends DocumentsProvider {
 
 			// If this is root, just return static root data
 			if(!documentId.contains("/") && documentId.startsWith("root")) {
-				final MatrixCursor c = new MatrixCursor(resolveDocumentProjection(projection));
-				MatrixCursor.RowBuilder row = c.newRow();
-				AssetManager assets = getContext().getResources().getAssets();
-				fillFolderRow(documentId, row, hasSubDirs(assets, documentId) ? TrackProviderConsts.FLAG_HAS_SUBDIRS : TrackProviderConsts.FLAG_NO_SUBDIRS);
+				MatrixCursor c = new MatrixCursor(ExampleProvider.resolveDocumentProjection(projection));
+				final MatrixCursor.RowBuilder row = c.newRow();
+				final AssetManager assets = this.getContext().getResources().getAssets();
+                this.fillFolderRow(documentId, row, this.hasSubDirs(assets, documentId) ? TrackProviderConsts.FLAG_HAS_SUBDIRS : TrackProviderConsts.FLAG_NO_SUBDIRS);
 				// NOTE: we return display name derived from documentId here VS returning the same label as used for Root.COLUMN_TITLE
 				// Real app should use same labels in both places (roots and queryDocument) for same root
-				row.add(Document.COLUMN_DISPLAY_NAME, capitalize(documentId));
+				row.add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, this.capitalize(documentId));
 				return c;
 
-			} else if(documentId.startsWith("root3") && documentId.endsWith(DOCID_STATIC_URL_SUFFIX)) {
+			} else if(documentId.startsWith("root3") && documentId.endsWith(ExampleProvider.DOCID_STATIC_URL_SUFFIX)) {
 				// Url mp3 with a duration. We must provide duration here to avoid endless/non-seekable stream
 
-				final MatrixCursor c = new MatrixCursor(resolveTrackProjection(projection));
-				int trackNum = extractTrackNum(documentId);
+				MatrixCursor c = new MatrixCursor(ExampleProvider.resolveTrackProjection(projection));
+				final int trackNum = ExampleProvider.extractTrackNum(documentId);
 				if(documentId.contains("dubstep")) {
-					fillURLRow(documentId, c.newRow(), DUBSTEP_HTTP_URL, DUBSTEP_SIZE, "Dubstep", trackNum == 1 ? 0 : DUBSTEP_DURATION_MS, true, true, true); // Send wave
+                    this.fillURLRow(documentId, c.newRow(), ExampleProvider.DUBSTEP_HTTP_URL, ExampleProvider.DUBSTEP_SIZE, "Dubstep", 1 == trackNum ? 0 : ExampleProvider.DUBSTEP_DURATION_MS, true, true, true); // Send wave
 				} else {
-					boolean emptyWave = trackNum < 4; // 1..4 summer tracks with empty wave, for the others - allow Poweramp to scan them
-					fillURLRow(documentId, c.newRow(), SUMMER_HTTP_URL, SUMMER_SIZE, "Summer", trackNum == 1 ? 0 : SUMMER_DURATION_MS, true, false, emptyWave);
+					final boolean emptyWave = 4 > trackNum; // 1..4 summer tracks with empty wave, for the others - allow Poweramp to scan them
+                    this.fillURLRow(documentId, c.newRow(), ExampleProvider.SUMMER_HTTP_URL, ExampleProvider.SUMMER_SIZE, "Summer", 1 == trackNum ? 0 : ExampleProvider.SUMMER_DURATION_MS, true, false, emptyWave);
 				}
 				return c;
 
-			} else if(documentId.startsWith("root3") && documentId.endsWith(DOCID_DYNAMIC_URL_SUFFIX)) {
+			} else if(documentId.startsWith("root3") && documentId.endsWith(ExampleProvider.DOCID_DYNAMIC_URL_SUFFIX)) {
 				// Dynamic url to mp3 with a duration. We must provide duration here to avoid endless/non-seekable stream
 				// NOTE: we use TrackProviderConsts.DYNAMIC_URL as URL here to indicate dynamic url track
 
-				final MatrixCursor c = new MatrixCursor(resolveTrackProjection(projection));
-				int trackNum = extractTrackNum(documentId);
+				MatrixCursor c = new MatrixCursor(ExampleProvider.resolveTrackProjection(projection));
+				final int trackNum = ExampleProvider.extractTrackNum(documentId);
 				if(documentId.contains("dubstep")) {
-					fillURLRow(documentId, c.newRow(), TrackProviderConsts.DYNAMIC_URL, DUBSTEP_SIZE, "Dubstep", DUBSTEP_DURATION_MS, true, true, true); // Send wave
+                    this.fillURLRow(documentId, c.newRow(), TrackProviderConsts.DYNAMIC_URL, ExampleProvider.DUBSTEP_SIZE, "Dubstep", ExampleProvider.DUBSTEP_DURATION_MS, true, true, true); // Send wave
 				} else {
-					boolean emptyWave = trackNum < 4; // 1..4 summer tracks with empty wave, for the others - allow Poweramp to scan them
-					fillURLRow(documentId, c.newRow(), TrackProviderConsts.DYNAMIC_URL, SUMMER_SIZE, "Summer", SUMMER_DURATION_MS, true, false, emptyWave);
+					final boolean emptyWave = 4 > trackNum; // 1..4 summer tracks with empty wave, for the others - allow Poweramp to scan them
+                    this.fillURLRow(documentId, c.newRow(), TrackProviderConsts.DYNAMIC_URL, ExampleProvider.SUMMER_SIZE, "Summer", ExampleProvider.SUMMER_DURATION_MS, true, false, emptyWave);
 				}
 				return c;
 
 			} else if(documentId.endsWith(".mp3") || documentId.endsWith(".flac")) { // Seems like a track
 				// We are adding metadata for root2 and check if it's actually requested as a small optimization (which can be big if track metadata retrieval requires additional processing)
-				boolean addMetadata = documentId.startsWith("root2/") && projection != null && arrayContains(projection, MediaStore.MediaColumns.TITLE);
-				final MatrixCursor c = new MatrixCursor(resolveTrackProjection(projection));
+				final boolean addMetadata = documentId.startsWith("root2/") && null != projection && this.arrayContains(projection, MediaStore.MediaColumns.TITLE);
+				MatrixCursor c = new MatrixCursor(ExampleProvider.resolveTrackProjection(projection));
 
-				boolean addLyrics = projection != null
-					                    && (arrayContains(projection, TrackProviderConsts.COLUMN_TRACK_LYRICS)
-											|| arrayContains(projection, TrackProviderConsts.COLUMN_TRACK_LYRICS_SYNCED));
-				boolean sendWave = documentId.contains("dubstep") && projection != null
-					                   && arrayContains(projection, TrackProviderConsts.COLUMN_TRACK_WAVE);
-				fillTrackRow(
+				final boolean addLyrics = null != projection
+					                    && (this.arrayContains(projection, TrackProviderConsts.COLUMN_TRACK_LYRICS)
+											|| this.arrayContains(projection, TrackProviderConsts.COLUMN_TRACK_LYRICS_SYNCED));
+				final boolean sendWave = documentId.contains("dubstep") && null != projection
+					                   && this.arrayContains(projection, TrackProviderConsts.COLUMN_TRACK_WAVE);
+                this.fillTrackRow(
 					documentId,
 					c.newRow(),
 					addMetadata,
 					sendWave, // Adding wave as well to root2 tracks
 					addLyrics,
-					extractTrackNum(documentId),
+                        ExampleProvider.extractTrackNum(documentId),
 					0,
 					TrackProviderConsts.FLAG_HAS_LYRICS // Set lyrics flag for all of these tracks
 				);
 				return c;
 
 			} else if(documentId.endsWith(".m3u")) { // Seems like a playlist
-				final MatrixCursor c = new MatrixCursor(resolveDocumentProjection(projection));
-				fillPlaylistRow(documentId, c.newRow());
+				MatrixCursor c = new MatrixCursor(ExampleProvider.resolveDocumentProjection(projection));
+                this.fillPlaylistRow(documentId, c.newRow());
 				return c;
 
 			} else { // This must be a directory
-				final MatrixCursor c = new MatrixCursor(resolveDocumentProjection(projection));
-				AssetManager assets = getContext().getResources().getAssets();
-				fillFolderRow(documentId, c.newRow(), hasSubDirs(assets, documentId) ? TrackProviderConsts.FLAG_HAS_SUBDIRS : TrackProviderConsts.FLAG_NO_SUBDIRS);
+				MatrixCursor c = new MatrixCursor(ExampleProvider.resolveDocumentProjection(projection));
+				final AssetManager assets = this.getContext().getResources().getAssets();
+                this.fillFolderRow(documentId, c.newRow(), this.hasSubDirs(assets, documentId) ? TrackProviderConsts.FLAG_HAS_SUBDIRS : TrackProviderConsts.FLAG_NO_SUBDIRS);
 				return c;
 			}
 
-		} catch(Throwable th) {
-			Log.e(TAG, "documentId=" + documentId, th);
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "documentId=" + documentId, th);
 		}
 		return null;
 	}
 
-	private void fillURLRow(@NonNull String documentId, @NonNull MatrixCursor.RowBuilder row, @NonNull String url,
-	                        long size, @NonNull String title,
-	                        long duration, boolean sendMetadata, boolean sendWave, boolean sendEmptyWave
+	private void fillURLRow(@NonNull final String documentId, @NonNull final MatrixCursor.RowBuilder row, @NonNull final String url,
+                            final long size, @NonNull String title,
+                            final long duration, final boolean sendMetadata, final boolean sendWave, final boolean sendEmptyWave
 	) {
-		row.add(Document.COLUMN_DOCUMENT_ID, documentId);
-		row.add(Document.COLUMN_MIME_TYPE, "audio/mpeg");
+		row.add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId);
+		row.add(DocumentsContract.Document.COLUMN_MIME_TYPE, "audio/mpeg");
 		// The display name defines name of the track "file" in "Show File Names" mode. There is also a title via MediaStore.MediaColumns.TITLE.
 		// It's up to you how you define display name, it can be anything filename alike, or it can just match track title
-		row.add(Document.COLUMN_DISPLAY_NAME, getShortName(documentId));
+		row.add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, ExampleProvider.getShortName(documentId));
 		// As our assets data is always static, we just return own apk installation time. For real folder structure, preferable last modified for given folder should be returned.
 		// This ensures Poweramp incremental scanning process. If we return <= 0 value here, Poweramp will be forced to rescan whole provider hierarchy each time it scans
-		row.add(Document.COLUMN_LAST_MODIFIED, mApkInstallTime);
+		row.add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, this.mApkInstallTime);
 		// Optional, real provider should preferable return real track file size here or 0
-		row.add(Document.COLUMN_SIZE, size);
+		row.add(DocumentsContract.Document.COLUMN_SIZE, size);
 		// Setting this will cause Poweramp to ask for the track album art via getDocumentThumbnail, but only if other metadata (MediaStore.MediaColumns.TITLE/MediaStore.MediaColumns.DURATION) exists
-		row.add(Document.COLUMN_FLAGS, Document.FLAG_SUPPORTS_THUMBNAIL);
+		row.add(DocumentsContract.Document.COLUMN_FLAGS, DocumentsContract.Document.FLAG_SUPPORTS_THUMBNAIL);
 
 		row.add(TrackProviderConsts.COLUMN_URL, url);
-		row.add(MediaStore.Audio.AudioColumns.DURATION, duration); // Milliseconds, long. If duration <= 0, this is endless non-seekable stream (e.g. radio)
+		row.add(MediaStore.MediaColumns.DURATION, duration); // Milliseconds, long. If duration <= 0, this is endless non-seekable stream (e.g. radio)
 
 		if(sendMetadata) { // NOTE: Poweramp doesn't need extra metadata (except COLUMN_URL/DURATION for streams) for queryDocuments, but requires that for queryDocument
 			if(TrackProviderConsts.DYNAMIC_URL.equals(url)) {
 				title += " Dynamic";
 			}
 
-			String prefix = title + " ";
+			final String prefix = title + " ";
 
 			// Some dump tags logic - as we have 2 static files here as an example, but they have docId like dubstep1.mp3, summer2.mp3, etc.
 			// Real provider should get this info from network or extract from the file
-			int trackNum = extractTrackNum(documentId);
+			final int trackNum = ExampleProvider.extractTrackNum(documentId);
 
 			row.add(MediaStore.MediaColumns.TITLE, prefix + "URL Track " + trackNum);
-			row.add(MediaStore.Audio.AudioColumns.ARTIST, prefix + "URL Artist");
-			row.add(MediaStore.Audio.AudioColumns.ALBUM, prefix + "URL Album");
+			row.add(MediaStore.MediaColumns.ARTIST, prefix + "URL Artist");
+			row.add(MediaStore.MediaColumns.ALBUM, prefix + "URL Album");
 			row.add(MediaStore.Audio.AudioColumns.YEAR, 2020); // Integer
 			row.add(TrackProviderConsts.COLUMN_ALBUM_ARTIST, prefix + "URL Album Artist");
-			row.add(MediaStore.Audio.AudioColumns.COMPOSER, prefix + "URL Composer");
+			row.add(MediaStore.MediaColumns.COMPOSER, prefix + "URL Composer");
 			row.add(TrackProviderConsts.COLUMN_GENRE, prefix + "URL Genre");
 			// Track number. Optional, but needed for proper sorting in albums
 			row.add(MediaStore.Audio.AudioColumns.TRACK, trackNum);
@@ -390,8 +388,8 @@ public class ExampleProvider extends DocumentsProvider {
 			row.add(MediaFormat.KEY_BIT_RATE, 128000);
 			// Optional, used just for Info/Tags and lists  (for hi-res)
 			row.add(TrackProviderConsts.COLUMN_BITS_PER_SAMPLE, 16);
-			if(sendWave && duration > 0) {
-				row.add(TrackProviderConsts.COLUMN_TRACK_WAVE, TrackProviderHelper.floatsToBytes(genRandomWave())); // We must put byte[] array here
+			if(sendWave && 0 < duration) {
+				row.add(TrackProviderConsts.COLUMN_TRACK_WAVE, TrackProviderHelper.floatsToBytes(this.genRandomWave())); // We must put byte[] array here
 			} else if(sendEmptyWave) {
 				// Add this for the default waveseek if you don't want URL to be downloaded one more time and scanned for the wave
 				row.add(TrackProviderConsts.COLUMN_TRACK_WAVE, new byte[0]);
@@ -400,97 +398,97 @@ public class ExampleProvider extends DocumentsProvider {
 	}
 
 	private float[] genRandomWave() {
-		float[] wave = new float[100];
+		final float[] wave = new float[100];
 		for(int i = 0; i < wave.length; i++) {
 			wave[i] = (float)(Math.random() * 2.0 - 1.0);
 		}
 		return wave;
 	}
 
-	private void fillFolderRow(@NonNull String documentId, @NonNull MatrixCursor.RowBuilder row, int flags) {
-		row.add(Document.COLUMN_DOCUMENT_ID, documentId);
-		row.add(Document.COLUMN_MIME_TYPE, Document.MIME_TYPE_DIR);
+	private void fillFolderRow(@NonNull final String documentId, @NonNull final MatrixCursor.RowBuilder row, final int flags) {
+		row.add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId);
+		row.add(DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.MIME_TYPE_DIR);
 		// Here we're returning actual folder name, but Poweramp supports anything in display name for folders, not necessary the name matching or related to the documentId or path.
-		row.add(Document.COLUMN_DISPLAY_NAME, getShortDirName(documentId));
-		row.add(Document.COLUMN_LAST_MODIFIED, mApkInstallTime);
+		row.add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, ExampleProvider.getShortDirName(documentId));
+		row.add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, this.mApkInstallTime);
 
-		boolean hasThumb = documentId.endsWith("1");
+		final boolean hasThumb = documentId.endsWith("1");
 		if(hasThumb) {
-			row.add(Document.COLUMN_FLAGS, Document.FLAG_SUPPORTS_THUMBNAIL); // Thumbnails for folders are supported since build 869
+			row.add(DocumentsContract.Document.COLUMN_FLAGS, DocumentsContract.Document.FLAG_SUPPORTS_THUMBNAIL); // Thumbnails for folders are supported since build 869
 		}
 		// If asked to add the subfolders hint, add it
-		if(flags != 0) {
+		if(0 != flags) {
 			row.add(TrackProviderConsts.COLUMN_FLAGS, flags);
 		}
 	}
 
-	private void fillPlaylistRow(@NonNull String documentId, @NonNull MatrixCursor.RowBuilder row) {
+	private void fillPlaylistRow(@NonNull final String documentId, @NonNull final MatrixCursor.RowBuilder row) {
 		// NOTE: for playlists, the playlist documentId should preferable end with some extension. Poweramp also looks into mime type, or assumes it's .m3u8 playlist if no mime type
-		row.add(Document.COLUMN_DOCUMENT_ID, documentId);
-		row.add(Document.COLUMN_MIME_TYPE, "audio/mpegurl");
+		row.add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId);
+		row.add(DocumentsContract.Document.COLUMN_MIME_TYPE, "audio/mpegurl");
 		// The display name defines name of the track "file" in "Show File Names" mode. There is also a title via MediaStore.MediaColumns.TITLE.
 		// It's up to you how you define display name, it can be anything filename alike, or it can just match track title
-		row.add(Document.COLUMN_DISPLAY_NAME, getShortName(documentId));
+		row.add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, ExampleProvider.getShortName(documentId));
 		// As our assets data is always static, we just return own apk installation time. For real folder structure, preferable last modified for given folder should be returned.
 		// This ensures Poweramp incremental scanning process. If we return <= 0 value here, Poweramp will be forced to rescan whole provider hierarchy each time it scans
-		row.add(Document.COLUMN_LAST_MODIFIED, mApkInstallTime);
+		row.add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, this.mApkInstallTime);
 	}
 
 	private void fillTrackRow(
-		@NonNull String documentId,
-		@NonNull MatrixCursor.RowBuilder row,
-		boolean addMetadata,
-		boolean sendWave,
-		boolean sendLyrics,
-		int trackNum,
-		int trackNumAlt,
-		int extraFlags
+            @NonNull final String documentId,
+            @NonNull final MatrixCursor.RowBuilder row,
+            final boolean addMetadata,
+            final boolean sendWave,
+            final boolean sendLyrics,
+            final int trackNum,
+            final int trackNumAlt,
+            final int extraFlags
 	) {
-		boolean isFlac = documentId.endsWith(".flac");
-		boolean isDubstep = documentId.contains("dubstep");
+		final boolean isFlac = documentId.endsWith(".flac");
+		final boolean isDubstep = documentId.contains("dubstep");
 
-		row.add(Document.COLUMN_DOCUMENT_ID, documentId);
-		row.add(Document.COLUMN_MIME_TYPE, isFlac ? "audio/flac" : "audio/mpeg");
+		row.add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId);
+		row.add(DocumentsContract.Document.COLUMN_MIME_TYPE, isFlac ? "audio/flac" : "audio/mpeg");
 		// The display name defines name of the track "file" in "Show File Names" mode. There is also a title via MediaStore.MediaColumns.TITLE.
 		// It's up to you how you define display name, it can be anything filename alike, or it can just match track title
-		row.add(Document.COLUMN_DISPLAY_NAME, getShortName(documentId));
+		row.add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, ExampleProvider.getShortName(documentId));
 		// As our assets data is always static, we just return own apk installation time. For real folder structure, preferable last modified for given folder should be returned.
 		// This ensures Poweramp incremental scanning process. If we return <= 0 value here, Poweramp will be forced to rescan whole provider hierarchy each time it scans
-		row.add(Document.COLUMN_LAST_MODIFIED, mApkInstallTime);
+		row.add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, this.mApkInstallTime);
 
-		String filePath = docIdToFileName(documentId); // We only have 2 real mp3s here for many "virtual" tracks
+		final String filePath = this.docIdToFileName(documentId); // We only have 2 real mp3s here for many "virtual" tracks
 
 		// Optional, real provider should preferable return real track file size here or 0.
-		row.add(Document.COLUMN_SIZE, getAssetFileSize(getContext().getResources().getAssets(), filePath));
+		row.add(DocumentsContract.Document.COLUMN_SIZE, this.getAssetFileSize(this.getContext().getResources().getAssets(), filePath));
 
 		// NOTE: Poweramp doesn't need extra metadata (except COLUMN_URL/DURATION for streams) for queryDocuments,
 		// but requires that for queryDocument for tracks, which are not direct fd. Direct fd tracks still can be quickly scanned by Poweramp, but
 		// socket/pipe/url tracks won't be scanned and thus metadata is required for them
 
 		// If provided, COLUMN_TRACK_ALT will sort tracks differently (for "by track #" sorting) in Folders/Folders Hierarchy
-		if(trackNumAlt > 0) {
+		if(0 < trackNumAlt) {
 			row.add(TrackProviderConsts.COLUMN_TRACK_ALT, trackNumAlt);
 		}
 
 		if(addMetadata) {
 			// Some dump tags logic - as we have 2 static files here as an example, but they have docId like dubstep1.mp3, summer2.mp3, etc.
 			// Real provider should get this info from network or extract from the file
-			String prefix = isDubstep ? "Dubstep " : "Summer ";
+			final String prefix = isDubstep ? "Dubstep " : "Summer ";
 
 			int flags = 0;
 
 			// Setting this will cause Poweramp to ask for track album art via getDocumentThumbnail, but only if other metadata (MediaStore.MediaColumns.TITLE/MediaStore.MediaColumns.DURATION) exists
-			flags |= Document.FLAG_SUPPORTS_THUMBNAIL;
+			flags |= DocumentsContract.Document.FLAG_SUPPORTS_THUMBNAIL;
 			flags |= TrackProviderConsts.FLAG_HAS_LYRICS;
 
-			row.add(Document.COLUMN_FLAGS, flags);
+			row.add(DocumentsContract.Document.COLUMN_FLAGS, flags);
 			row.add(MediaStore.MediaColumns.TITLE, prefix + "Track " + trackNum);
-			row.add(MediaStore.Audio.AudioColumns.ARTIST, prefix + "Artist");
-			row.add(MediaStore.Audio.AudioColumns.DURATION, isDubstep ? 125000L : 217000L); // Milliseconds, long
-			row.add(MediaStore.Audio.AudioColumns.ALBUM, prefix + "Album");
+			row.add(MediaStore.MediaColumns.ARTIST, prefix + "Artist");
+			row.add(MediaStore.MediaColumns.DURATION, isDubstep ? 125000L : 217000L); // Milliseconds, long
+			row.add(MediaStore.MediaColumns.ALBUM, prefix + "Album");
 			row.add(MediaStore.Audio.AudioColumns.YEAR, isDubstep ? 2020 : 2019); // Integer
 			row.add(TrackProviderConsts.COLUMN_ALBUM_ARTIST, prefix + "Album Artist");
-			row.add(MediaStore.Audio.AudioColumns.COMPOSER, prefix + " Composer");
+			row.add(MediaStore.MediaColumns.COMPOSER, prefix + " Composer");
 			row.add(TrackProviderConsts.COLUMN_GENRE, prefix + " Genre");
 			// Track number. Optional, but needed for proper sorting in albums.
 			// If not defined (or set to <= 0), Poweramp will use cursor position for track - this may be useful for folders where we want default cursor based ordering of items -
@@ -508,11 +506,11 @@ public class ExampleProvider extends DocumentsProvider {
 			row.add(TrackProviderConsts.COLUMN_BITS_PER_SAMPLE, 16);
 
 			if(sendWave) {
-				row.add(TrackProviderConsts.COLUMN_TRACK_WAVE, TrackProviderHelper.floatsToBytes(genRandomWave()));
+				row.add(TrackProviderConsts.COLUMN_TRACK_WAVE, TrackProviderHelper.floatsToBytes(this.genRandomWave()));
 			}
 
 			// Add our own extra flags if any
-			if(extraFlags != 0) {
+			if(0 != extraFlags) {
 				row.add(TrackProviderConsts.COLUMN_FLAGS, extraFlags);
 			}
 
@@ -538,36 +536,36 @@ public class ExampleProvider extends DocumentsProvider {
 	 * based on track # or other user selected criteria. Instead, we use sortOrder as optional additional parameter for things like
 	 */
 	@Override
-	public Cursor queryChildDocuments(String parentDocumentId, String[] projection, String sortOrder) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "queryChildDocuments parentDocumentId=" + parentDocumentId + " projection=" + Arrays.toString(projection));
+	public Cursor queryChildDocuments(final String parentDocumentId, final String[] projection, final String sortOrder) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "queryChildDocuments parentDocumentId=" + parentDocumentId + " projection=" + Arrays.toString(projection));
 
 		try {
-			AssetManager assets = getContext().getResources().getAssets();
-			String[] filesAndDirs = assets.list(parentDocumentId);
+			final AssetManager assets = this.getContext().getResources().getAssets();
+			final String[] filesAndDirs = assets.list(parentDocumentId);
 
 			// To demonstrate folders and files sorting based on cursor position, sort and reverse the array. Do this for Root1
-			if(parentDocumentId.equals("root1")) {
+			if("root1".equals(parentDocumentId)) {
 				Arrays.sort(filesAndDirs, 0, filesAndDirs.length, new Comparator<String>() {
 					@Override
-					public int compare(String o1, String o2) {
+					public int compare(final String o1, final String o2) {
 						return o2.compareToIgnoreCase(o1);
 					}
 				});
 			}
 
 			// We are adding metadata for root2 and check if it's actually requested as a small optimization (which can be big if track metadata retrieval requires additional processing)
-			boolean addMetadata = parentDocumentId.startsWith("root2") && projection != null && arrayContains(projection, MediaStore.MediaColumns.TITLE);
+			final boolean addMetadata = parentDocumentId.startsWith("root2") && null != projection && this.arrayContains(projection, MediaStore.MediaColumns.TITLE);
 
-			if(LOG) Log.w(TAG, "queryChildDocuments filesAndDirs=" + Arrays.toString(filesAndDirs));
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "queryChildDocuments filesAndDirs=" + Arrays.toString(filesAndDirs));
 
-			final MatrixCursor c = new MatrixCursor(resolveDocumentProjection(projection));
+			MatrixCursor c = new MatrixCursor(ExampleProvider.resolveDocumentProjection(projection));
 
-			int ix = 0;
-			for(String fileOrDir : filesAndDirs) {
-				String path = parentDocumentId + "/" + fileOrDir; // Path is our documentId. Note that this provider defines paths/documentIds format. Poweramp treats them as opaque string
+			final int ix = 0;
+			for(final String fileOrDir : filesAndDirs) {
+				final String path = parentDocumentId + "/" + fileOrDir; // Path is our documentId. Note that this provider defines paths/documentIds format. Poweramp treats them as opaque string
 
-				if(isAssetDir(assets, path)) {
-					fillFolderRow(path, c.newRow(), hasSubDirs(assets, path) ? TrackProviderConsts.FLAG_HAS_SUBDIRS : TrackProviderConsts.FLAG_NO_SUBDIRS);
+				if(this.isAssetDir(assets, path)) {
+                    this.fillFolderRow(path, c.newRow(), this.hasSubDirs(assets, path) ? TrackProviderConsts.FLAG_HAS_SUBDIRS : TrackProviderConsts.FLAG_NO_SUBDIRS);
 
 				} // Else this is empty.txt file, we skip it
 			}
@@ -578,41 +576,41 @@ public class ExampleProvider extends DocumentsProvider {
 			// - parent folder lastModified changed
 			// - full rescan required by user or external intent
 
-			int count = parentDocumentId.length(); // Just various number based on parent document path length
+			final int count = parentDocumentId.length(); // Just various number based on parent document path length
 
 			String docId;
 
-			if(parentDocumentId.equals("root3")) {
+			if("root3".equals(parentDocumentId)) {
 				// For root3 add m3u8 playlist
-				fillPlaylistRow(parentDocumentId + "/" + "streams-playlist.m3u8", c.newRow());
+                this.fillPlaylistRow(parentDocumentId + "/" + "streams-playlist.m3u8", c.newRow());
 
 				// Add dynamic URL tracks
-				docId = parentDocumentId + "/" + "dubstep" + "-" + 1 + DOCID_DYNAMIC_URL_SUFFIX;
-				fillURLRow(docId, c.newRow(),
+				docId = parentDocumentId + "/" + "dubstep" + "-" + 1 + ExampleProvider.DOCID_DYNAMIC_URL_SUFFIX;
+                this.fillURLRow(docId, c.newRow(),
 						TrackProviderConsts.DYNAMIC_URL,
-						DUBSTEP_SIZE,
+                        ExampleProvider.DUBSTEP_SIZE,
 						"", // NOTE: titles not sent here
-						DUBSTEP_DURATION_MS,
+                        ExampleProvider.DUBSTEP_DURATION_MS,
 						false, false, false); // Not sending metadata here
 
-				docId = parentDocumentId + "/" + "summer" + "-" + 2 + DOCID_DYNAMIC_URL_SUFFIX;
-				fillURLRow(docId, c.newRow(),
+				docId = parentDocumentId + "/" + "summer" + "-" + 2 + ExampleProvider.DOCID_DYNAMIC_URL_SUFFIX;
+                this.fillURLRow(docId, c.newRow(),
 						TrackProviderConsts.DYNAMIC_URL,
-						SUMMER_SIZE,
+                        ExampleProvider.SUMMER_SIZE,
 						"", // NOTE: titles not sent here
-						SUMMER_DURATION_MS,
+                        ExampleProvider.SUMMER_DURATION_MS,
 						false, false, false); // Not sending metadata here
 
 				// And fill with random number of http links to the tracks
 				for(int i = 0; i < count; i++) {
-					boolean isDubstep = (i & 1) != 0;
-					boolean isStream = i == 0; // First track here will be a "stream" - non seekable, no duration
-					docId = parentDocumentId + "/" + (isDubstep ? "dubstep" : "summer") + "-" + (i + 3) + DOCID_STATIC_URL_SUFFIX;
-					fillURLRow(docId, c.newRow(),
-							isDubstep ? DUBSTEP_HTTP_URL : SUMMER_HTTP_URL,
-							isDubstep ? DUBSTEP_SIZE : SUMMER_SIZE,
+					final boolean isDubstep = 0 != (i & 1);
+					final boolean isStream = 0 == i; // First track here will be a "stream" - non seekable, no duration
+					docId = parentDocumentId + "/" + (isDubstep ? "dubstep" : "summer") + "-" + (i + 3) + ExampleProvider.DOCID_STATIC_URL_SUFFIX;
+                    this.fillURLRow(docId, c.newRow(),
+							isDubstep ? ExampleProvider.DUBSTEP_HTTP_URL : ExampleProvider.SUMMER_HTTP_URL,
+							isDubstep ? ExampleProvider.DUBSTEP_SIZE : ExampleProvider.SUMMER_SIZE,
 							"", // NOTE: titles not sent here
-							isStream ? 0 : (isDubstep ? DUBSTEP_DURATION_MS : SUMMER_DURATION_MS),
+							isStream ? 0 : (isDubstep ? ExampleProvider.DUBSTEP_DURATION_MS : ExampleProvider.SUMMER_DURATION_MS),
 							false, false, false);
 				}
 
@@ -622,19 +620,19 @@ public class ExampleProvider extends DocumentsProvider {
 				// For root1, demonstrate Folders/Folders Hierarchy sorting based on alternative track number
 				// We reverse number positions of tracks here, but still providing non-reversed track number to use as tag number in albums and other non-folder categories
 				for(int i = 0; i < count; i++) {
-					docId = parentDocumentId + "/" + ((i & 1) != 0 ? "dubstep" : "summer") + "-" + (i + 1) + (i == 1 ? ".flac" : ".mp3"); // First dubstep track will be flac
-					int sort = i + 1;
+					docId = parentDocumentId + "/" + (0 != (i & 1) ? "dubstep" : "summer") + "-" + (i + 1) + (1 == i ? ".flac" : ".mp3"); // First dubstep track will be flac
+					final int sort = i + 1;
 					int sortAlt = 0;
-					if(parentDocumentId.equals("root1")) {
+					if("root1".equals(parentDocumentId)) {
 						sortAlt = count - i;
 					}
-					fillTrackRow(docId, c.newRow(), addMetadata, false, false, sort, sortAlt, 0);
+                    this.fillTrackRow(docId, c.newRow(), addMetadata, false, false, sort, sortAlt, 0);
 				}
 			}
 
 			return c;
-		} catch(Throwable th) {
-			Log.e(TAG, "documentId=" + parentDocumentId, th);
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "documentId=" + parentDocumentId, th);
 		}
 
 		return null;
@@ -643,33 +641,33 @@ public class ExampleProvider extends DocumentsProvider {
 	/**
 	 * Simple method to check our assets directory structure for children folders. We have only folders and empty.txt files there
 	 */
-	private boolean hasSubDirs(AssetManager assets, String path) {
+	private boolean hasSubDirs(final AssetManager assets, final String path) {
 		try {
-			String[] filesAndDirs = assets.list(path);
-			if(filesAndDirs != null && filesAndDirs.length > 0) {
-				for(String child : filesAndDirs) {
+			final String[] filesAndDirs = assets.list(path);
+			if(null != filesAndDirs && 0 < filesAndDirs.length) {
+				for(final String child : filesAndDirs) {
 					if(!child.endsWith(".txt")) {
 						return true;
 					}
 				}
 			}
-		} catch(IOException e) {
-			Log.e(TAG, path, e);
+		} catch(final IOException e) {
+			Log.e(ExampleProvider.TAG, path, e);
 		}
 		return false;
 	}
 
 	/** Send album art for tracks with track-provided metadata */
 	@Override
-	public AssetFileDescriptor openDocumentThumbnail(String documentId, Point sizeHint, CancellationSignal signal) throws FileNotFoundException {
+	public AssetFileDescriptor openDocumentThumbnail(final String documentId, final Point sizeHint, final CancellationSignal signal) throws FileNotFoundException {
 
-		String imageSrc;
+		final String imageSrc;
 
-		if(documentId.endsWith(".mp3") || documentId.endsWith(".flac") || documentId.endsWith(DOCID_STATIC_URL_SUFFIX)
-			|| documentId.endsWith(DOCID_DYNAMIC_URL_SUFFIX)
+		if(documentId.endsWith(".mp3") || documentId.endsWith(".flac") || documentId.endsWith(ExampleProvider.DOCID_STATIC_URL_SUFFIX)
+			|| documentId.endsWith(ExampleProvider.DOCID_DYNAMIC_URL_SUFFIX)
 		) {
 			// We have just 2 images here and we ignore sizeHint. Poweramp preferred image size is 1024x1024px
-			boolean isDubstep = documentId.contains("dubstep");
+			final boolean isDubstep = documentId.contains("dubstep");
 			imageSrc = isDubstep ? "cover-1.jpg" : "cover-2.jpg";
 
 		} else {
@@ -677,14 +675,14 @@ public class ExampleProvider extends DocumentsProvider {
 			imageSrc = "folder-1.jpg";
 		}
 
-		if(LOG) Log.w(TAG, "openDocumentThumbnail documentId=" + documentId + " sizeHint=" + sizeHint + " imageSrc=" + imageSrc);
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openDocumentThumbnail documentId=" + documentId + " sizeHint=" + sizeHint + " imageSrc=" + imageSrc);
 
-		if(imageSrc == null) throw new FileNotFoundException(documentId);
+		if(null == imageSrc) throw new FileNotFoundException(documentId);
 
 
 		try {
-			return getContext().getResources().getAssets().openFd(imageSrc);
-		} catch(IOException e) {
+			return this.getContext().getResources().getAssets().openFd(imageSrc);
+		} catch(final IOException e) {
 			throw new FileNotFoundException(documentId);
 		}
 	}
@@ -693,48 +691,49 @@ public class ExampleProvider extends DocumentsProvider {
 	 * Send actual track data as direct file descriptor or seekable socket protocol
 	 */
 	@Override
-	public ParcelFileDescriptor openDocument(String documentId, String mode, CancellationSignal signal) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "openDocument documentId=" + documentId + " mode=" + mode + " callingPak=" + getCallingPackage());
-		int accessMode = ParcelFileDescriptor.parseMode(mode);
-		if((accessMode & ParcelFileDescriptor.MODE_READ_ONLY) == 0) throw new IllegalAccessError("documentId=" + documentId + " mode=" + mode);
+	public ParcelFileDescriptor openDocument(final String documentId, final String mode, final CancellationSignal signal) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openDocument documentId=" + documentId + " mode=" + mode + " callingPak=" + this.getCallingPackage());
+		final int accessMode = ParcelFileDescriptor.parseMode(mode);
+		if(0 == (accessMode & ParcelFileDescriptor.MODE_READ_ONLY)) throw new IllegalAccessError("documentId=" + documentId + " mode=" + mode);
 
 		// Poweramp provides CancellationSignal, so we may want to check that on open and periodically (for example, in case of using pipe here)
-		if(signal != null) {
+		if(null != signal) {
 			signal.throwIfCanceled();
 		}
 
-		String filePath = docIdToFileName(documentId);
-		if(filePath == null) throw new FileNotFoundException(documentId);
+		final String filePath = this.docIdToFileName(documentId);
+		if(null == filePath) throw new FileNotFoundException(documentId);
 
 		// Let's send root2 "dubstep" via seekable socket and other files - via direct fd. Don't do this for root1 where no metadata given and Poweramp expects direct fd tracks
 		// Check package name for Poweramp (or other known client) which supports this fd protocol
-		String pak = getCallingPackage();
-		if(pak != null && pak.equals(PowerampAPIHelper.getPowerampPackageName(getContext()))
+		final String pak = this.getCallingPackage();
+		if(null != pak && pak.equals(PowerampAPIHelper.getPowerampPackageName(this.getContext()))
 				&& documentId.startsWith("root2/") && documentId.contains("dubstep")
 		) {
 			// Let's open dubstep-2 via milliseconds based seekbable sockets, and other dubsteps - via byte offset seekable sockets
 			if(documentId.endsWith("-2.flac")) {
-				return openViaSeekableSocket2(documentId, filePath, signal);
+				return this.openViaSeekableSocket2(documentId, filePath, signal);
 			} else {
-				return openViaSeekableSocket(documentId, filePath, signal);
+				return this.openViaSeekableSocket(documentId, filePath, signal);
 			}
 		}
 
 		// Let's send root2 "summer" via seekable proxy file descriptors. No need to check for client package as these file descriptors should be supported everywhere
-		if(Build.VERSION.SDK_INT >= 26 && USE_OPEN_PROXY_FILE_DESCRIPTOR && documentId.startsWith("root2/") && documentId.contains("summer")) {
-			return openViaProxyFd(documentId, filePath, signal);
+		if(26 <= Build.VERSION.SDK_INT && ExampleProvider.USE_OPEN_PROXY_FILE_DESCRIPTOR && documentId.startsWith("root2/") && documentId.contains("summer")) {
+			return this.openViaProxyFd(documentId, filePath, signal);
 		}
 
-		return openViaDirectFD(documentId, filePath);
+		return this.openViaDirectFD(documentId, filePath);
 	}
 
 	/** For given docId, return appropriate asset file name */
-	private @Nullable String docIdToFileName(String documentId) {
+    @Nullable
+    private String docIdToFileName(final String documentId) {
 		if(documentId.endsWith(".m3u8")) {
 			return "streams-playlist.m3u8";
 
 		} else if(documentId.endsWith(".mp3")) {
-			boolean isDubstep = documentId.contains("dubstep");
+			final boolean isDubstep = documentId.contains("dubstep");
 			return isDubstep ? "bensound-dubstep.mp3" : "bensound-summer.mp3"; // We only have 2 real mp3s here for many "virtual" tracks
 
 		} else if(documentId.endsWith(".flac")) {
@@ -745,29 +744,29 @@ public class ExampleProvider extends DocumentsProvider {
 	}
 
 	/** This version of the method uses byte offset based seeks */
-	private ParcelFileDescriptor openViaSeekableSocket(final String documentId, String filePath, final CancellationSignal signal) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "openViaSeekableSocket documentId=" + documentId + " filePath=" + filePath);
+	private ParcelFileDescriptor openViaSeekableSocket(String documentId, final String filePath, CancellationSignal signal) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket documentId=" + documentId + " filePath=" + filePath);
 		try {
-			final ParcelFileDescriptor[] fds = ParcelFileDescriptor.createSocketPair();
-			final File file = new File(getContext().getFilesDir(), filePath);
-			final long fileLength = file.length();
+			ParcelFileDescriptor[] fds = ParcelFileDescriptor.createSocketPair();
+			File file = new File(this.getContext().getFilesDir(), filePath);
+			long fileLength = file.length();
 
-			if(DEBUG_ALWAYS_STOP_IN_OPEN) {
-				if(LOG) Log.w(TAG, "openViaSeekableSocket STOP due to DEBUG_ALWAYS_STOP_IN_OPEN");
+			if(ExampleProvider.DEBUG_ALWAYS_STOP_IN_OPEN) {
+				if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket STOP due to DEBUG_ALWAYS_STOP_IN_OPEN");
 				// NOTE: in this case if we just return socket here and stop, Poweramp will still wait for timeout
 				// as socket was never closed from our side
 				// If we want fail-fast approach from Poweramp, either return null here, or shutdown socket properly
 				new Thread(new Runnable() {
 					public void run() {
-						if(LOG) Log.w(TAG, "openViaSeekableSocket STOP shutdown socket");
-						FileDescriptor socket = fds[1].getFileDescriptor();
+						if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket STOP shutdown socket");
+						final FileDescriptor socket = fds[1].getFileDescriptor();
 						try {
 							Os.shutdown(socket, 0);
-						} catch(ErrnoException ex) {
+						} catch(final ErrnoException ex) {
 						}
 						try {
 							Os.close(socket);
-						} catch(ErrnoException ex) {
+						} catch(final ErrnoException ex) {
 						}
 					}
 				}).start();
@@ -782,46 +781,46 @@ public class ExampleProvider extends DocumentsProvider {
 				public void run() {
 					// NOTE: we can use arbitrary buffer size here >0, but increasing buffer will increase non-seekable "window" at the end of file
 					// Using buffer size > MAX_DATA_SIZE will cause buffer to be split into multiple packets
-					ByteBuffer buf = ByteBuffer.allocateDirect(TrackProviderProto.MAX_DATA_SIZE);
+					final ByteBuffer buf = ByteBuffer.allocateDirect(TrackProviderProto.MAX_DATA_SIZE);
 					buf.order(ByteOrder.nativeOrder());
 
 					long bytesSent = 0;
 
-					try(FileInputStream fis = new FileInputStream(file)) {
-						FileChannel fc = fis.getChannel(); // We'll be using nio for the buffer loading
-						try(TrackProviderProto proto = new TrackProviderProto(fds[1], fileLength)) {
+					try(final FileInputStream fis = new FileInputStream(file)) {
+						final FileChannel fc = fis.getChannel(); // We'll be using nio for the buffer loading
+						try(final TrackProviderProto proto = new TrackProviderProto(fds[1], fileLength)) {
 
-							if(DEBUG_ALWAYS_STOP_PROTOCOL) {
-								if(LOG) Log.w(TAG, "openViaSeekableSocket STOP due to DEBUG_ALWAYS_STOP_PROTOCOL");
+							if(ExampleProvider.DEBUG_ALWAYS_STOP_PROTOCOL) {
+								if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket STOP due to DEBUG_ALWAYS_STOP_PROTOCOL");
 								return; // Immediately stop. NOTE: this will call proto.close automatically
 							}
 
 							proto.sendHeader(); // Send initial header
 
-							if(DEBUG_STOP_PROTOCOL_AFTER_HEADER) {
-								if(LOG) Log.w(TAG, "openViaSeekableSocket STOP due to DEBUG_STOP_PROTOCOL_AFTER_HEADER");
+							if(ExampleProvider.DEBUG_STOP_PROTOCOL_AFTER_HEADER) {
+								if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket STOP due to DEBUG_STOP_PROTOCOL_AFTER_HEADER");
 								return; // Immediately stop. NOTE: this will call proto.close automatically
 							}
 
 							while(true) {
 								int len;
 								//noinspection UnusedAssignment
-								while((len = fc.read(buf)) > 0) {
+								while(0 < (len = fc.read(buf))) {
 									buf.flip();
 
 									// Send some data to Poweramp and optionally receive seek request
 									// NOTE: avoid sending empty buffers here (!buf.hasRemaining()), as this will cause premature EOF
-									long seekRequestPos = proto.sendData(buf);
+									final long seekRequestPos = proto.sendData(buf);
 
-									handleSeekRequest(proto, seekRequestPos, fc, fileLength); // May be handle seek request
+                                    ExampleProvider.this.handleSeekRequest(proto, seekRequestPos, fc, fileLength); // May be handle seek request
 
 									bytesSent += buf.limit();
 
 									buf.clear();
 
-									if(DEBUG_STOP_PROTOCOL_AFTER_BYTES > 0 && bytesSent >= DEBUG_STOP_PROTOCOL_AFTER_BYTES) {
+									if(ExampleProvider.DEBUG_STOP_PROTOCOL_AFTER_BYTES > 0 && DEBUG_STOP_PROTOCOL_AFTER_BYTES <= bytesSent) {
 										// Force-stop playback from our side
-										if(LOG) Log.w(TAG, "openViaSeekableSocket STOP due to DEBUG_STOP_AFTER_BYTES");
+										if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket STOP due to DEBUG_STOP_AFTER_BYTES");
 										return;
 									}
 								}
@@ -836,9 +835,9 @@ public class ExampleProvider extends DocumentsProvider {
 								// Solution to this is to keep file and socket opened here and to continue seek commands processing until Poweramp actually closes socket.
 								// This scenario can be easily tested by pausing Poweramp close to the track end and seeking while paused
 
-								long seekRequestPos = proto.sendEOFAndWaitForSeekOrClose();
-								if(handleSeekRequest(proto, seekRequestPos, fc, fileLength)) {
-									if(LOG) Log.w(TAG, "openViaSeekableSocket file seek past EOF documentId=" + documentId);
+								final long seekRequestPos = proto.sendEOFAndWaitForSeekOrClose();
+								if(ExampleProvider.this.handleSeekRequest(proto, seekRequestPos, fc, fileLength)) {
+									if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket file seek past EOF documentId=" + documentId);
 									//noinspection UnnecessaryContinue
 									continue; // We've just processed extra seek request, continue sending buffers
 								} else {
@@ -846,34 +845,34 @@ public class ExampleProvider extends DocumentsProvider {
 								}
 							}
 
-							if(LOG) Log.w(TAG, " openViaSeekableSocket file DONE documentId=" + documentId);
+							if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, " openViaSeekableSocket file DONE documentId=" + documentId);
 						}
-					} catch(TrackProviderProto.TrackProviderProtoClosed ex) {
-						if(LOG) Log.w(TAG, "openViaSeekableSocket closed documentId=" + documentId + " " + ex.getMessage());
-					} catch(Throwable th) {
+					} catch(final TrackProviderProto.TrackProviderProtoClosed ex) {
+						if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket closed documentId=" + documentId + " " + ex.getMessage());
+					} catch(final Throwable th) {
 						// If we're here, we can't do much - close connection, release resources, and exit
-						Log.e(TAG, "documentId=" + documentId, th);
+						Log.e(ExampleProvider.TAG, "documentId=" + documentId, th);
 					}
 				}
 			}).start();
 
 			return fds[0];
 
-		} catch(Throwable th) {
-			Log.e(TAG, "documentId=" + documentId, th);
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "documentId=" + documentId, th);
 			throw new FileNotFoundException(documentId);
 		}
 	}
 
 	/** This version of the method uses milliseconds offset based seek requests */
-	private ParcelFileDescriptor openViaSeekableSocket2(final String documentId, String filePath, final CancellationSignal signal) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "openViaSeekableSocket2 documentId=" + documentId + " filePath=" + filePath);
+	private ParcelFileDescriptor openViaSeekableSocket2(String documentId, final String filePath, CancellationSignal signal) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket2 documentId=" + documentId + " filePath=" + filePath);
 		try {
-			final ParcelFileDescriptor[] fds = ParcelFileDescriptor.createSocketPair();
-			final File file = new File(getContext().getFilesDir(), filePath);
+			ParcelFileDescriptor[] fds = ParcelFileDescriptor.createSocketPair();
+			File file = new File(this.getContext().getFilesDir(), filePath);
 
-			if(DEBUG_ALWAYS_STOP_IN_OPEN) {
-				if(LOG) Log.w(TAG, "openViaSeekableSocket STOP due to DEBUG_ALWAYS_STOP_IN_OPEN - return null");
+			if(ExampleProvider.DEBUG_ALWAYS_STOP_IN_OPEN) {
+				if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket STOP due to DEBUG_ALWAYS_STOP_IN_OPEN - return null");
 				// NOTE: in this case if we just return socket here and stop, Poweramp will still wait for timeout
 				// as socket was never closed from our side
 				// If we want fail-fast approach from Poweramp, either return null here, or shutdown socket properly
@@ -885,7 +884,7 @@ public class ExampleProvider extends DocumentsProvider {
 			// NOTE: for the sake of testing, let's send some approximation of the file instead, based on
 			// duration and average bytes per ms
 			// The real DUBSTEP_AVERAGE_BYTES_PER_MS depends on compression and file format
-			final long fileLength = DUBSTEP_FAKE_AVERAGE_BYTES_PER_MS * DUBSTEP_DURATION_MS;
+			long fileLength = ExampleProvider.DUBSTEP_FAKE_AVERAGE_BYTES_PER_MS * ExampleProvider.DUBSTEP_DURATION_MS;
 
 			// NOTE: it's not possible to use timeouts on this side of the socket as Poweramp may open and hold the socket for an indefinite time while in the paused state
 			// NOTE: don't use AsyncTask or other short-time thread pools here, as:
@@ -896,44 +895,44 @@ public class ExampleProvider extends DocumentsProvider {
 				@SuppressWarnings("UnusedAssignment") public void run() {
 					// NOTE: we can use arbitrary buffer size here >0, but increasing buffer will increase non-seekable "window" at the end of file
 					// Using buffer size > MAX_DATA_SIZE will cause buffer to be split into multiple packets
-					ByteBuffer buf = ByteBuffer.allocateDirect(TrackProviderProto.MAX_DATA_SIZE);
+					final ByteBuffer buf = ByteBuffer.allocateDirect(TrackProviderProto.MAX_DATA_SIZE);
 					buf.order(ByteOrder.nativeOrder());
 					long bytesSent = 0;
 
-					try(FileInputStream fis = new FileInputStream(file)) {
-						FileChannel fc = fis.getChannel(); // We'll be using nio for the buffer loading
-						try(TrackProviderProto proto = new TrackProviderProto(fds[1], fileLength)) {
+					try(final FileInputStream fis = new FileInputStream(file)) {
+						final FileChannel fc = fis.getChannel(); // We'll be using nio for the buffer loading
+						try(final TrackProviderProto proto = new TrackProviderProto(fds[1], fileLength)) {
 
-							if(DEBUG_ALWAYS_STOP_PROTOCOL) {
-								if(LOG) Log.w(TAG, "openViaSeekableSocket2 STOP due to DEBUG_ALWAYS_STOP_PROTOCOL");
+							if(ExampleProvider.DEBUG_ALWAYS_STOP_PROTOCOL) {
+								if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket2 STOP due to DEBUG_ALWAYS_STOP_PROTOCOL");
 								return; // Immediately stop. NOTE: this will call proto.close automatically
 							}
 
 							proto.sendHeader(); // Send initial header
 
-							if(DEBUG_STOP_PROTOCOL_AFTER_HEADER) {
-								if(LOG) Log.w(TAG, "openViaSeekableSocket2 STOP due to DEBUG_STOP_PROTOCOL_AFTER_HEADER");
+							if(ExampleProvider.DEBUG_STOP_PROTOCOL_AFTER_HEADER) {
+								if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket2 STOP due to DEBUG_STOP_PROTOCOL_AFTER_HEADER");
 								return; // Immediately stop. NOTE: this will call proto.close automatically
 							}
 
 							while(true) {
 								int len;
-								while((len = fc.read(buf)) > 0) {
+								while(0 < (len = fc.read(buf))) {
 									buf.flip();
 
 									// Send some data to Poweramp and optionally receive seek request
 									// NOTE: avoid sending empty buffers here (!buf.hasRemaining()), as this will cause premature EOF
-									TrackProviderProto.SeekRequest seekRequest = proto.sendData2(buf);
+									final TrackProviderProto.SeekRequest seekRequest = proto.sendData2(buf);
 
-									handleSeekRequest2(proto, seekRequest, fc, fileLength); // May be handle seek request
+                                    ExampleProvider.this.handleSeekRequest2(proto, seekRequest, fc, fileLength); // May be handle seek request
 
 									bytesSent += buf.limit();
 
 									buf.clear();
 
-									if(DEBUG_STOP_PROTOCOL_AFTER_BYTES > 0 && bytesSent >= DEBUG_STOP_PROTOCOL_AFTER_BYTES) {
+									if(ExampleProvider.DEBUG_STOP_PROTOCOL_AFTER_BYTES > 0 && DEBUG_STOP_PROTOCOL_AFTER_BYTES <= bytesSent) {
 										// Force-stop playback from our side
-										if(LOG) Log.w(TAG, "openViaSeekableSocket2 STOP due to DEBUG_STOP_AFTER_BYTES");
+										if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket2 STOP due to DEBUG_STOP_AFTER_BYTES");
 										return;
 									}
 								}
@@ -948,9 +947,9 @@ public class ExampleProvider extends DocumentsProvider {
 								// Solution to this is to keep file and socket opened here and to continue seek commands processing until Poweramp actually closes socket.
 								// This scenario can be easily tested by pausing Poweramp close to the track end and seeking while paused
 
-								TrackProviderProto.SeekRequest seekRequest = proto.sendEOFAndWaitForSeekOrClose2();
-								if(handleSeekRequest2(proto, seekRequest, fc, fileLength)) {
-									if(LOG) Log.w(TAG, "openViaSeekableSocket2 file seek past EOF documentId=" + documentId);
+								final TrackProviderProto.SeekRequest seekRequest = proto.sendEOFAndWaitForSeekOrClose2();
+								if(ExampleProvider.this.handleSeekRequest2(proto, seekRequest, fc, fileLength)) {
+									if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket2 file seek past EOF documentId=" + documentId);
 									//noinspection UnnecessaryContinue
 									continue; // We've just processed extra seek request, continue sending buffers
 								} else {
@@ -958,86 +957,86 @@ public class ExampleProvider extends DocumentsProvider {
 								}
 							}
 
-							if(LOG) Log.w(TAG, " openViaSeekableSocket2 file DONE documentId=" + documentId);
+							if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, " openViaSeekableSocket2 file DONE documentId=" + documentId);
 						}
-					} catch(TrackProviderProto.TrackProviderProtoClosed ex) {
-						if(LOG) Log.w(TAG, "openViaSeekableSocket2 closed documentId=" + documentId + " " + ex.getMessage());
-					} catch(Throwable th) {
+					} catch(final TrackProviderProto.TrackProviderProtoClosed ex) {
+						if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaSeekableSocket2 closed documentId=" + documentId + " " + ex.getMessage());
+					} catch(final Throwable th) {
 						// If we're here, we can't do much - close connection, release resources, and exit
-						Log.e(TAG, "documentId=" + documentId, th);
+						Log.e(ExampleProvider.TAG, "documentId=" + documentId, th);
 					}
 				}
 			}).start();
 
 			return fds[0];
 
-		} catch(Throwable th) {
-			Log.e(TAG, "documentId=" + documentId, th);
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "documentId=" + documentId, th);
 			throw new FileNotFoundException(documentId);
 		}
 	}
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
-	private ParcelFileDescriptor openViaProxyFd(final String documentId, final String filePath, final CancellationSignal signal) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "openViaProxyFd documentId=" + documentId + " filePath=" + filePath);
+	private ParcelFileDescriptor openViaProxyFd(String documentId, String filePath, CancellationSignal signal) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaProxyFd documentId=" + documentId + " filePath=" + filePath);
 		FileInputStream fis = null;
 		try {
-			final File file = new File(getContext().getFilesDir(), filePath);
-			final long fileLength = file.length();
+			File file = new File(this.getContext().getFilesDir(), filePath);
+			long fileLength = file.length();
 			fis = new FileInputStream(file);
-			final FileDescriptor fd = fis.getFD();
+			FileDescriptor fd = fis.getFD();
 
-			final HandlerThread thread = new HandlerThread(documentId); // This is the thread we're handling fd reading on
+			HandlerThread thread = new HandlerThread(documentId); // This is the thread we're handling fd reading on
 			thread.start();
-			Handler handler = new Handler(thread.getLooper());
+			final Handler handler = new Handler(thread.getLooper());
 
-			StorageManager storageManager = (StorageManager)getContext().getSystemService(Context.STORAGE_SERVICE);
+			final StorageManager storageManager = (StorageManager) this.getContext().getSystemService(Context.STORAGE_SERVICE);
 
-			final FileInputStream finalFis = fis;
+			FileInputStream finalFis = fis;
 
-			ParcelFileDescriptor pfd = storageManager.openProxyFileDescriptor(ParcelFileDescriptor.MODE_READ_ONLY, new ProxyFileDescriptorCallback() {
+			final ParcelFileDescriptor pfd = storageManager.openProxyFileDescriptor(ParcelFileDescriptor.MODE_READ_ONLY, new ProxyFileDescriptorCallback() {
 				@Override
 				public long onGetSize() throws ErrnoException {
-					if(LOG) Log.w(TAG, "onGetSize fileLength=" + fileLength + " documentId=" + documentId);
+					if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "onGetSize fileLength=" + fileLength + " documentId=" + documentId);
 					return fileLength;
 				}
 
-				public int onRead(long offset, int size, byte[] data) throws ErrnoException {
+				public int onRead(final long offset, final int size, final byte[] data) throws ErrnoException {
 					try {
 						// NOTE: doing direct low level reads on file descriptor
 						// Real provider, for example, for http streaming, could track offset and request remote seek if needed,
 						// then read data from http stream to byte[] data
 
-						if(LOG) Log.w(TAG, "onRead documentId=" + documentId + " offset=" + offset + " size=" + size + " thread=" + Thread.currentThread());
+						if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "onRead documentId=" + documentId + " offset=" + offset + " size=" + size + " thread=" + Thread.currentThread());
 
 						return Os.pread(fd, data, 0, size, offset);
 
-					} catch(ErrnoException errno) {
-						Log.e(TAG, "documentId=" + documentId + " filePath=" + filePath, errno);
+					} catch(final ErrnoException errno) {
+						Log.e(ExampleProvider.TAG, "documentId=" + documentId + " filePath=" + filePath, errno);
 						throw errno; // Rethrow
 
-					} catch(Throwable e) {
-						Log.e(TAG, "documentId=" + documentId + " filePath=" + filePath, e);
+					} catch(final Throwable e) {
+						Log.e(ExampleProvider.TAG, "documentId=" + documentId + " filePath=" + filePath, e);
 						throw new ErrnoException("onRead", OsConstants.EBADF);
 					}
 				}
 
 				@Override
 				public void onRelease() {
-					if(LOG) Log.w(TAG, "openViaProxyFd onRelease");
+					if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaProxyFd onRelease");
 
 					thread.quitSafely();
 
-					closeSilently(finalFis);
+                    ExampleProvider.closeSilently(finalFis);
 
-					if(LOG) Log.w(TAG, "openViaProxyFd DONE");
+					if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaProxyFd DONE");
 				}
 			}, handler);
 
 			return pfd;
-		} catch(Throwable th) {
-			Log.e(TAG, "documentId=" + documentId, th);
-			closeSilently(fis); // If we here, we failed with or prior the proxy, so close everything
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "documentId=" + documentId, th);
+            ExampleProvider.closeSilently(fis); // If we here, we failed with or prior the proxy, so close everything
 			throw new FileNotFoundException(documentId);
 		}
 	}
@@ -1046,17 +1045,17 @@ public class ExampleProvider extends DocumentsProvider {
 	 * THREADING: worker thread
 	 * @return true if we actually handled seek request, false otherwise
 	 */
-	private boolean handleSeekRequest(@NonNull TrackProviderProto proto, long seekRequestPos, @NonNull FileChannel fc, long fileLength) {
-		if(seekRequestPos != TrackProviderProto.INVALID_SEEK_POS) {
+	private boolean handleSeekRequest(@NonNull final TrackProviderProto proto, final long seekRequestPos, @NonNull final FileChannel fc, final long fileLength) {
+		if(TrackProviderProto.INVALID_SEEK_POS != seekRequestPos) {
 			// We have a seek request.
 			// Your code may take any reasonable time to fulfil the seek request, e.g. it can reopen http connection with appropriate offset, etc.
 			// Poweramp just waits for the seek result packet (the waiting is limited by the user-set timeout).
 			// Now we should either send appropriate seek result packet or close the connection (e.g. on some error).
 			// Poweramp ignores any other packets sent before the seek result packet.
 
-			if(LOG) Log.w(TAG, "handleSeekRequest seekRequestPos=" + seekRequestPos + " fileLength=" + fileLength);
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleSeekRequest seekRequestPos=" + seekRequestPos + " fileLength=" + fileLength);
 
-			long newPos = seekTrack(fc, seekRequestPos, fileLength);
+			final long newPos = this.seekTrack(fc, seekRequestPos, fileLength);
 			proto.sendSeekResult(newPos);
 			return true;
 		}
@@ -1069,17 +1068,17 @@ public class ExampleProvider extends DocumentsProvider {
 	 * Still, we need to send some byte based newPos offset back to Poweramp. The resulting byte offset may be an approximation
 	 * @return true if we actually handled seek request, false otherwise
 	 */
-	private boolean handleSeekRequest2(@NonNull TrackProviderProto proto, @Nullable TrackProviderProto.SeekRequest seekRequest,
-	                                   @NonNull FileChannel fc, long fileLength
+	private boolean handleSeekRequest2(@NonNull final TrackProviderProto proto, @Nullable final TrackProviderProto.SeekRequest seekRequest,
+                                       @NonNull final FileChannel fc, final long fileLength
 	) {
-		if(seekRequest != null && seekRequest.offsetBytes != TrackProviderProto.INVALID_SEEK_POS) {
+		if(null != seekRequest && TrackProviderProto.INVALID_SEEK_POS != seekRequest.offsetBytes) {
 			// We have a seek request.
 			// Your code may take any reasonable time to fulfil the seek request, e.g. it can reopen http connection with appropriate offset, etc.
 			// Poweramp just waits for the seek result packet (the waiting is limited by the user-set timeout).
 			// Now we should either send appropriate seek result packet or close the connection (e.g. on some error).
 			// Poweramp ignores any other packets sent before the seek result packet.
 
-			if(LOG) Log.w(TAG, "handleSeekRequest seekRequestPos=" + seekRequest + " fileLength=" + fileLength);
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleSeekRequest seekRequestPos=" + seekRequest + " fileLength=" + fileLength);
 
 			// NOTE: we could seek track here based on seekRequest.ms field.
 			// In this case we still need to send back newPos as new byte offset.
@@ -1087,10 +1086,10 @@ public class ExampleProvider extends DocumentsProvider {
 
 			// For the sake of testing, we'll seek track properly here, but will send "fake" newPos
 
-			long newPos = seekTrack(fc, seekRequest.offsetBytes, fileLength);
+			final long newPos = this.seekTrack(fc, seekRequest.offsetBytes, fileLength);
 
 			final long fakeAverageBytesPerMs = 116; // ~116 bytes per ms in bensound-dubstep.flac
-			long fakeNewPos = seekRequest.ms * fakeAverageBytesPerMs;
+			final long fakeNewPos = seekRequest.ms * fakeAverageBytesPerMs;
 
 			proto.sendSeekResult(fakeNewPos);
 			return true;
@@ -1102,10 +1101,10 @@ public class ExampleProvider extends DocumentsProvider {
 	 * THREADING: worker thread.
 	 * @return new position within the track, or <0 on error
 	 * */
-	private long seekTrack(@NonNull FileChannel channel, long seekPosBytes, long fileLength) {
+	private long seekTrack(@NonNull final FileChannel channel, final long seekPosBytes, final long fileLength) {
 		// Out seeking is simple as we just seek the FileChannel
 		try {
-			if(seekPosBytes >= 0) {
+			if(0 <= seekPosBytes) {
 				channel.position(seekPosBytes);
 			} else { // If seekPos < 0, this is a seek request from the end of the file
 				channel.position(fileLength + seekPosBytes);
@@ -1113,8 +1112,8 @@ public class ExampleProvider extends DocumentsProvider {
 
 			return channel.position();
 
-		} catch(IOException ex) {
-			Log.e(TAG, "seekPosBytes=" + seekPosBytes, ex);
+		} catch(final IOException ex) {
+			Log.e(ExampleProvider.TAG, "seekPosBytes=" + seekPosBytes, ex);
 			return -1;
 		}
 	}
@@ -1123,21 +1122,21 @@ public class ExampleProvider extends DocumentsProvider {
 	 * For tracks available on the device as file, it's much easier to send direct file descriptor pointing to the file itself. The file descriptor is seekable
 	 * and track can be reopened multiple times in this case, e.g. if tags, seek-wave, or album art scanning is needed.
 	 */
-	private ParcelFileDescriptor openViaDirectFD(@NonNull String documentId, @NonNull String filePath) throws FileNotFoundException {
-		if(LOG) Log.w(TAG, "openViaDirectFD documentId=" + documentId + " filePath=" + filePath);
+	private ParcelFileDescriptor openViaDirectFD(@NonNull final String documentId, @NonNull final String filePath) throws FileNotFoundException {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openViaDirectFD documentId=" + documentId + " filePath=" + filePath);
 		try {
-			if(USE_MP3_COPY) {
-				File file = new File(getContext().getFilesDir(), filePath);
+			if(ExampleProvider.USE_MP3_COPY) {
+				final File file = new File(this.getContext().getFilesDir(), filePath);
 				return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
 			} else {
-				AssetFileDescriptor afd = getContext().getResources().getAssets().openFd(filePath);
-				ParcelFileDescriptor pfd = afd.getParcelFileDescriptor();
+				final AssetFileDescriptor afd = this.getContext().getResources().getAssets().openFd(filePath);
+				final ParcelFileDescriptor pfd = afd.getParcelFileDescriptor();
 				Os.lseek(pfd.getFileDescriptor(), afd.getStartOffset(), OsConstants.SEEK_SET);
-				if(LOG) Log.w(TAG, "openDocument afd.offset=" + afd.getStartOffset() + " len=" + afd.getLength() + " lseek=" + Os.lseek(pfd.getFileDescriptor(), 0, OsConstants.SEEK_CUR));
+				if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "openDocument afd.offset=" + afd.getStartOffset() + " len=" + afd.getLength() + " lseek=" + Os.lseek(pfd.getFileDescriptor(), 0, OsConstants.SEEK_CUR));
 				return pfd;
 			}
-		} catch(Throwable th) {
-			Log.e(TAG, "documentId=" + documentId, th);
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "documentId=" + documentId, th);
 			throw new FileNotFoundException(documentId);
 		}
 	}
@@ -1146,19 +1145,19 @@ public class ExampleProvider extends DocumentsProvider {
 	 * Implementing CALL_GET_URL here to return dynamic URL for given track. Document uri is passed as string in arg
 	 */
 	@Override
-	public Bundle call(String method, String arg, Bundle extras) {
-		Bundle res = super.call(method, arg, extras);
-		if(res == null) {
+	public Bundle call(final String method, final String arg, final Bundle extras) {
+		final Bundle res = super.call(method, arg, extras);
+		if(null == res) {
 			if(TrackProviderConsts.CALL_GET_URL.equals(method)) {
-				return handleGetUrl(arg, extras);
+				return this.handleGetUrl(arg, extras);
 
 			} else if(TrackProviderConsts.CALL_RESCAN.equals(method)) {
-				return handleRescan(arg, extras);
+				return this.handleRescan(arg, extras);
 
 			} else if(TrackProviderConsts.CALL_GET_DIR_METADATA.equals(method)) {
-				return handleGetDirMetadata(arg, extras);
+				return this.handleGetDirMetadata(arg, extras);
 
-			} else Log.e(TAG, "call bad method=" + method, new Exception());
+			} else Log.e(ExampleProvider.TAG, "call bad method=" + method, new Exception());
 		}
 		return res;
 	}
@@ -1167,15 +1166,15 @@ public class ExampleProvider extends DocumentsProvider {
 	 * Returns dynamic URL for given track. Document uri is passed as string in arg
 	 * @return bundle with the appropriate data is expected, or null error
 	 */
-	private Bundle handleGetUrl(String arg, Bundle extras) {
+	private Bundle handleGetUrl(final String arg, final Bundle extras) {
 		if(TextUtils.isEmpty(arg)) throw new IllegalArgumentException(arg);
-		Uri uri = Uri.parse(arg);
-		enforceTree(uri);
-		String documentId = DocumentsContract.getDocumentId(uri);
-		if(documentId.endsWith(DOCID_DYNAMIC_URL_SUFFIX)) {
-			boolean isDubstep = documentId.contains("dubstep");
-			Bundle res = new Bundle();
-			String url = isDubstep ? DUBSTEP_HTTP_URL :  SUMMER_HTTP_URL;
+		final Uri uri = Uri.parse(arg);
+        this.enforceTree(uri);
+		final String documentId = DocumentsContract.getDocumentId(uri);
+		if(documentId.endsWith(ExampleProvider.DOCID_DYNAMIC_URL_SUFFIX)) {
+			final boolean isDubstep = documentId.contains("dubstep");
+			final Bundle res = new Bundle();
+			final String url = isDubstep ? ExampleProvider.DUBSTEP_HTTP_URL : ExampleProvider.SUMMER_HTTP_URL;
 			res.putString(TrackProviderConsts.COLUMN_URL, url);
 
 			// Optionally add some headers to send with given url. These headers are used just once for this track playback and are not persisted
@@ -1187,9 +1186,9 @@ public class ExampleProvider extends DocumentsProvider {
 			// Optionally set some http method. By default it's GET, setting GET here for the demonstration purpose
 			res.putString(TrackProviderConsts.COLUMN_HTTP_METHOD, "GET");
 
-			if(LOG) Log.w(TAG, "call CALL_GET_URL url=>" + url);
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "call CALL_GET_URL url=>" + url);
 			return res;
-		} else Log.e(TAG, "call CALL_GET_URL bad documentId=" + documentId, new Exception());
+		} else Log.e(ExampleProvider.TAG, "call CALL_GET_URL bad documentId=" + documentId, new Exception());
 		return null;
 	}
 
@@ -1204,28 +1203,28 @@ public class ExampleProvider extends DocumentsProvider {
 	 * If we're sending the rescan intent from this app (see {@link MainActivity#sendScanThisSubdir(View)}), we're getting the extras
 	 * we sent.
 	 */
-	private Bundle handleRescan(String arg, Bundle extras) {
-		if(LOG) Log.w(TAG, "handleRescan extras=" + dumpBundle(extras));
+	private Bundle handleRescan(final String arg, final Bundle extras) {
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleRescan extras=" + ExampleProvider.dumpBundle(extras));
 
 		// Analyze optional EXTRA_PROVIDER and EXTRA_PATH here.
 		// If EXTRA_PROVIDER matches this provider, we may update the cached remote data
-		String targetProvider = extras.getString(PowerampAPI.Scanner.EXTRA_PROVIDER);
+		final String targetProvider = extras.getString(PowerampAPI.Scanner.EXTRA_PROVIDER);
 
-		if(TextUtils.equals(targetProvider, getContext().getPackageName())) { // Assuming authority == package name for this provider
+		if(TextUtils.equals(targetProvider, this.getContext().getPackageName())) { // Assuming authority == package name for this provider
 
-			String path = extras.getString(PowerampAPI.Scanner.EXTRA_PATH);
+			final String path = extras.getString(PowerampAPI.Scanner.EXTRA_PATH);
 
 			if(!TextUtils.isEmpty(path)) {
 
 				// - update data just for the EXTRA_PATH sub-directory hierarchy
 
-				if(LOG) Log.w(TAG, "handleRescan targeted rescan path=" + path);
+				if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleRescan targeted rescan path=" + path);
 
 			} else {
 
 				// - update data from the remote server
 
-				if(LOG) Log.w(TAG, "handleRescan targeted provider rescan");
+				if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleRescan targeted provider rescan");
 
 			}
 		} else //noinspection StatementWithEmptyBody
@@ -1241,7 +1240,7 @@ public class ExampleProvider extends DocumentsProvider {
 
 				// - force update all data
 
-				if(LOG) Log.w(TAG, "handleRescan forced full update");
+				if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleRescan forced full update");
 
 			}
 
@@ -1256,55 +1255,55 @@ public class ExampleProvider extends DocumentsProvider {
 	 * @param arg the directory uri
 	 * @return bundle filled with extras: {@link TrackProviderConsts#EXTRA_ANCESTORS}
 	 */
-	private Bundle handleGetDirMetadata(String arg, Bundle extras) {
-		Uri uri = Uri.parse(arg);
-		enforceTree(uri);
+	private Bundle handleGetDirMetadata(final String arg, final Bundle extras) {
+		final Uri uri = Uri.parse(arg);
+        this.enforceTree(uri);
 
 		// DocumentId for the directory which hierarchy (up to the root) Poweramp wants to retrieve
-		String docId = DocumentsContract.getDocumentId(uri);
+		final String docId = DocumentsContract.getDocumentId(uri);
 
 		// We should return array of ancestor documentIds for given documentId from root to the direct parent of the given documentId
 
 		// As for this provider, we have full path information in the document id itself, we just provide at as is.
 		// Real provider may additionally specifically process the directory docId as needed to generate the valid hierarchy path
 
-		String[] segments = docId.split("/");
+		final String[] segments = docId.split("/");
 
-		if(segments.length <= 1) { // If we have just one segment, this is a root documentId and no parents exist
-			if(LOG) Log.w(TAG, "handleGetDirMetadata IGNORE ROOT docId=" + docId + " uri=" + uri);
+		if(1 >= segments.length) { // If we have just one segment, this is a root documentId and no parents exist
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleGetDirMetadata IGNORE ROOT docId=" + docId + " uri=" + uri);
 			return Bundle.EMPTY;
 		}
 
-		StringBuilder sb = new StringBuilder();
-		String[] ancestors = new String[segments.length - 1]; // We want to return all ancestor document ids from root to parent dir, not including the dir in question
+		final StringBuilder sb = new StringBuilder();
+		final String[] ancestors = new String[segments.length - 1]; // We want to return all ancestor document ids from root to parent dir, not including the dir in question
 		for(int i = 0; i < ancestors.length; i++) {
 			sb.append(segments[i]);
 			ancestors[i] = sb.toString(); // Return full documentId for each ancestor
 			sb.append('/');
 		}
 
-		Bundle res =  new Bundle();
+		final Bundle res =  new Bundle();
 		res.putStringArray(TrackProviderConsts.EXTRA_ANCESTORS, ancestors);
 
-		if(LOG) Log.w(TAG, "handleGetDirMetadata uri=" + uri + " docId=" + docId + " ancestors=" + Arrays.toString(ancestors) + " res=" + dumpBundle(res));
+		if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "handleGetDirMetadata uri=" + uri + " docId=" + docId + " ancestors=" + Arrays.toString(ancestors) + " res=" + ExampleProvider.dumpBundle(res));
 		return res;
 	}
 
 
 	/** We need to override this DocumentProvider API method, which is called by super class to check if given documentId is a correct child of parentDocumentId */
 	@Override
-	public boolean isChildDocument(String parentDocumentId, String documentId) {
+	public boolean isChildDocument(final String parentDocumentId, final String documentId) {
 		try {
 			// As our hierarchy is defined by assets/, we could just return true here, but for a sake of example, let's verify that given documentId is inside the folder
 			// This is track, we randomly generate track entries, so we can't verify them
-			boolean res = documentId.endsWith(".mp3") || documentId.endsWith(".m3u8") || documentId.endsWith(DOCID_STATIC_URL_SUFFIX)
-					|| documentId.startsWith(parentDocumentId) && isAssetDir(getContext().getResources().getAssets(), documentId);
+			final boolean res = documentId.endsWith(".mp3") || documentId.endsWith(".m3u8") || documentId.endsWith(ExampleProvider.DOCID_STATIC_URL_SUFFIX)
+					|| documentId.startsWith(parentDocumentId) && this.isAssetDir(this.getContext().getResources().getAssets(), documentId);
 
-			if(LOG) Log.w(TAG, "isChildDocument =>" + res + " parentDocumentId=" + parentDocumentId + " documentId=" + documentId);
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "isChildDocument =>" + res + " parentDocumentId=" + parentDocumentId + " documentId=" + documentId);
 
 			return res;
-		} catch(Throwable th) {
-			Log.e(TAG, "parentDocumentId=" + parentDocumentId + " documentId=" + documentId, th);
+		} catch(final Throwable th) {
+			Log.e(ExampleProvider.TAG, "parentDocumentId=" + parentDocumentId + " documentId=" + documentId, th);
 		}
 		return false;
 	}
@@ -1313,44 +1312,44 @@ public class ExampleProvider extends DocumentsProvider {
 	 * Very inefficient way of checking folders vs files in assets, but Android SDK doesn't provide anything better.
 	 * This shouldn't be used in production providers anyway
 	 */
-	private boolean isAssetDir(AssetManager assets, @NonNull String path) {
+	private boolean isAssetDir(final AssetManager assets, @NonNull final String path) {
 		// Ignore empty.txt
 		return !path.endsWith("/empty.txt");
 	}
 
-	private long getAssetFileSize(AssetManager assets, String path) {
+	private long getAssetFileSize(final AssetManager assets, final String path) {
 		try {
-			try(AssetFileDescriptor afd = assets.openFd(path)) {
+			try(final AssetFileDescriptor afd = assets.openFd(path)) {
 				return afd.getLength();
 			}
-		} catch(IOException ex) {
+		} catch(final IOException ex) {
 			return 0L;
 		}
 	}
 
-	private static String[] resolveRootProjection(String[] projection) {
-		return projection != null ? projection : DEFAULT_ROOT_PROJECTION;
+	private static String[] resolveRootProjection(final String[] projection) {
+		return null != projection ? projection : ExampleProvider.DEFAULT_ROOT_PROJECTION;
 	}
 
-	private static String[] resolveDocumentProjection(String[] projection) {
-		return projection != null ? projection : DEFAULT_DOCUMENT_PROJECTION;
+	private static String[] resolveDocumentProjection(final String[] projection) {
+		return null != projection ? projection : ExampleProvider.DEFAULT_DOCUMENT_PROJECTION;
 	}
 
-	private static String[] resolveTrackProjection(String[] projection) {
-		return projection != null ? projection : DEFAULT_TRACK_AND_METADATA_PROJECTION;
+	private static String[] resolveTrackProjection(final String[] projection) {
+		return null != projection ? projection : ExampleProvider.DEFAULT_TRACK_AND_METADATA_PROJECTION;
 	}
 
 	/** Assumes docId is track path, thus we can extract digits after - and before .mp3, e.g. trackNum = 10 for dubstep-10.mp3 */
-	private static int extractTrackNum(String docId) {
-		int startIx = docId.lastIndexOf('-');
-		int endIx = docId.lastIndexOf('.');
-		if(startIx < 0 || endIx < 0 || startIx >= endIx) {
+	private static int extractTrackNum(final String docId) {
+		final int startIx = docId.lastIndexOf('-');
+		final int endIx = docId.lastIndexOf('.');
+		if(0 > startIx || 0 > endIx || startIx >= endIx) {
 			return 0;
 		}
 		try {
 			return Integer.parseInt(docId.substring(startIx + 1, endIx), 10);
-		} catch(NumberFormatException ex) {
-			Log.e(TAG, "docId=" + docId, ex);
+		} catch(final NumberFormatException ex) {
+			Log.e(ExampleProvider.TAG, "docId=" + docId, ex);
 		}
 		return 0;
 	}
@@ -1360,10 +1359,11 @@ public class ExampleProvider extends DocumentsProvider {
 	 * NOTE: for /foo/bar/file.mp3 it returns file.mp3, but for /foo/bar or /foo/bar/ it returns bar, so it assumes folder path, not any path
 	 * @param path should be a _folder_ path
 	 */
-	@SuppressWarnings("null")
-	private static @NonNull String getShortDirName(@NonNull String path) {
+    @SuppressWarnings("null")
+    @NonNull
+    private static String getShortDirName(@NonNull final String path) {
 		int ix = path.lastIndexOf('/');
-		if(ix == -1) {
+		if(-1 == ix) {
 			return path;
 		}
 		int end = path.length();
@@ -1378,43 +1378,44 @@ public class ExampleProvider extends DocumentsProvider {
 	/**
 	 * @return last segment of the path (after the last /), this is usually filename with extension, or the path itself if no slashes
 	 */
-	@SuppressWarnings("null")
-	private static @NonNull String getShortName(@NonNull String path) {
+    @SuppressWarnings("null")
+    @NonNull
+    private static String getShortName(@NonNull final String path) {
 		int ix = path.lastIndexOf('/'); //
-		if(ix == -1) {
+		if(-1 == ix) {
 			ix = path.lastIndexOf('\\');
 		}
-		if(ix == -1) {
+		if(-1 == ix) {
 			return path;
 		}
 		return path.substring(ix + 1);
 	}
 
 	/** To provide direct file descriptors, we need to have tracks extracted to local filesystem files */
-	private void copyAsset(String assetFile, File targetDir, boolean overwrite) {
-		File outFile = new File(targetDir, getShortName(assetFile));
+	private void copyAsset(final String assetFile, final File targetDir, final boolean overwrite) {
+		final File outFile = new File(targetDir, ExampleProvider.getShortName(assetFile));
 		if(!overwrite && outFile.exists()) {
-			if(LOG) Log.w(TAG, "copyAsset IGNORE exists assetFile=" + assetFile + " =>" + outFile);
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "copyAsset IGNORE exists assetFile=" + assetFile + " =>" + outFile);
 			return;
 		}
 		try {
-			try(InputStream in = getContext().getResources().getAssets().open(assetFile)) {
-				try(OutputStream out = new FileOutputStream(outFile)) {
-					byte[] buffer = new byte[16 * 1024];
+			try(final InputStream in = this.getContext().getResources().getAssets().open(assetFile)) {
+				try(final OutputStream out = new FileOutputStream(outFile)) {
+					final byte[] buffer = new byte[16 * 1024];
 					int read;
-					while((read = in.read(buffer)) != -1){
+					while(-1 != (read = in.read(buffer))){
 						out.write(buffer, 0, read);
 					}
 				}
 			}
-			if(LOG) Log.w(TAG, "copyAsset assetFile=" + assetFile + " =>" + outFile);
-		} catch(IOException ex) {
-			Log.e(TAG, "", ex);
+			if(ExampleProvider.LOG) Log.w(ExampleProvider.TAG, "copyAsset assetFile=" + assetFile + " =>" + outFile);
+		} catch(final IOException ex) {
+			Log.e(ExampleProvider.TAG, "", ex);
 		}
 	}
 
-	private <T> boolean arrayContains(@NonNull T[] array, T needle) {
-		for(T item : array) {
+	private <T> boolean arrayContains(@NonNull final T[] array, final T needle) {
+		for(final T item : array) {
 			if(Objects.equals(item, needle)) {
 				//if(LOG) Log.w(TAG, "arrayContains FOUND needle=" + needle);
 				return true;
@@ -1424,51 +1425,53 @@ public class ExampleProvider extends DocumentsProvider {
 		return false;
 	}
 
-	private @Nullable String capitalize(@Nullable String documentId) {
-		if(documentId != null && documentId.length() > 0) {
+	@Nullable
+    private String capitalize(@Nullable final String documentId) {
+		if(null != documentId && 0 < documentId.length()) {
 			return Character.toUpperCase(documentId.charAt(0)) + documentId.substring(1);
 		}
 		return documentId;
 	}
 
 	@SuppressLint("NewApi")
-	private void enforceTree(Uri documentUri) {
+	private void enforceTree(final Uri documentUri) {
 		if(DocumentsContract.isTreeUri(documentUri)) { // Exists in SDK=21, but hidden there
-			final String parent = DocumentsContract.getTreeDocumentId(documentUri);
-			final String child = DocumentsContract.getDocumentId(documentUri);
+			String parent = DocumentsContract.getTreeDocumentId(documentUri);
+			String child = DocumentsContract.getDocumentId(documentUri);
 			if (Objects.equals(parent, child)) {
 				return;
 			}
-			if (!isChildDocument(parent, child)) {
+			if (!this.isChildDocument(parent, child)) {
 				throw new SecurityException(
 						"Document " + child + " is not a descendant of " + parent);
 			}
 		}
 	}
 
-	private static void closeSilently(@Nullable Closeable c) {
-		if(c != null) {
+	private static void closeSilently(@Nullable final Closeable c) {
+		if(null != c) {
 			try {
 				c.close();
-			} catch(IOException ex) {
-				Log.e(TAG, "", ex);
+			} catch(final IOException ex) {
+				Log.e(ExampleProvider.TAG, "", ex);
 			}
 		}
 	}
 
 	@SuppressWarnings("null")
-	private static @NonNull String dumpBundle(@Nullable Bundle bundle) {
-		if(bundle == null) {
+    @NonNull
+    private static String dumpBundle(@Nullable final Bundle bundle) {
+		if(null == bundle) {
 			return "null bundle";
 		}
-		StringBuilder sb = new StringBuilder();
-		Set<String> keys = bundle.keySet();
+		final StringBuilder sb = new StringBuilder();
+		final Set<String> keys = bundle.keySet();
 		sb.append("\n");
-		for(String key : keys) {
+		for(final String key : keys) {
 			sb.append('\t').append(key).append("=");
-			Object val = bundle.get(key);
+			final Object val = bundle.get(key);
 			sb.append(val);
-			if(val != null) {
+			if(null != val) {
 				sb.append(" ").append(val.getClass().getSimpleName());
 			}
 			sb.append("\n");

@@ -28,20 +28,20 @@ import org.eclipse.jdt.annotation.NonNull;
 /**
  * Some useful track provider related helper methods
  */
-public class TrackProviderHelper {
-	private static final String TAG = "TrackProviderHelper";
+public enum TrackProviderHelper {
+    ;
+    private static final String TAG = "TrackProviderHelper";
 	private static final boolean LOG = false;
 
 	/** Converts bytes to float array */
-	public static float @NonNull[] bytesToFloats(byte @NonNull[] waveBytes) {
-		if(waveBytes.length == 0) {
+	public static float @NonNull[] bytesToFloats(final byte @NonNull[] waveBytes) {
+		if(0 == waveBytes.length) {
 			return new float[0];
 		}
-		@SuppressLint("InlinedApi")
-		int floatSize = waveBytes.length / Float.BYTES;
+		@SuppressLint("InlinedApi") final int floatSize = waveBytes.length / Float.BYTES;
 
-		float[] wave = new float[floatSize]; // Alloc
-		ByteBuffer bb = ByteBuffer.wrap(waveBytes); // Allocs
+		final float[] wave = new float[floatSize]; // Alloc
+		final ByteBuffer bb = ByteBuffer.wrap(waveBytes); // Allocs
 		bb.asFloatBuffer().get(wave); // Alloc
 
 		return wave;
@@ -49,13 +49,12 @@ public class TrackProviderHelper {
 
 	/** Converts float array to bytes */
 	@SuppressWarnings("null")
-	public static byte @NonNull[] floatsToBytes(float @NonNull[] wave) {
-		if(wave.length == 0) {
+	public static byte @NonNull[] floatsToBytes(final float @NonNull[] wave) {
+		if(0 == wave.length) {
 			return new byte[0];
 		}
-		@SuppressLint("InlinedApi")
-		ByteBuffer bb = ByteBuffer.allocate(wave.length * Float.BYTES);
-		FloatBuffer fb = bb.asFloatBuffer(); // Allocs
+		@SuppressLint("InlinedApi") final ByteBuffer bb = ByteBuffer.allocate(wave.length * Float.BYTES);
+		final FloatBuffer fb = bb.asFloatBuffer(); // Allocs
 		fb.put(wave);
 		return bb.array();
 	}

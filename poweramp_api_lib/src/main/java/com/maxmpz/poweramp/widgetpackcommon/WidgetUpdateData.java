@@ -59,10 +59,10 @@ public class WidgetUpdateData {
 
 	@Override
 	public String toString() {
-		return super.toString() + " hasTrack=" + hasTrack + " title=" + title + " album=" + album + " artist=" + artist + " supportsCatNav=" + supportsCatNav +
-					" posInList=" + posInList + " listSize=" + listSize + " flags=0x" + Integer.toHexString(flags) + " albumArtBitmap=" + albumArtBitmap +
-					" albumArtTimestamp=" + albumArtTimestamp + " albumArtSource=" + albumArtSource +
-			        " playing=" + playing + " shuffle=" + shuffle + " repeat=" + repeat;
+		return super.toString() + " hasTrack=" + this.hasTrack + " title=" + this.title + " album=" + this.album + " artist=" + this.artist + " supportsCatNav=" + this.supportsCatNav +
+					" posInList=" + this.posInList + " listSize=" + this.listSize + " flags=0x" + Integer.toHexString(this.flags) + " albumArtBitmap=" + this.albumArtBitmap +
+					" albumArtTimestamp=" + this.albumArtTimestamp + " albumArtSource=" + this.albumArtSource +
+			        " playing=" + this.playing + " shuffle=" + this.shuffle + " repeat=" + this.repeat;
 	}
 
 	/**
@@ -70,12 +70,12 @@ public class WidgetUpdateData {
 	 * Same for repeat/shuffle, playing state
 	 */
 	public void resetTrackData() {
-		if(LOG) Log.w(TAG, "resetTrackData", new Exception());
-		hasTrack = false;
-		title = album = artist = null;
-		supportsCatNav = false;
-		posInList = 0;
-		listSize = 0;
+		if(WidgetUpdateData.LOG) Log.w(WidgetUpdateData.TAG, "resetTrackData", new Exception());
+        this.hasTrack = false;
+        this.title = this.album = this.artist = null;
+        this.supportsCatNav = false;
+        this.posInList = 0;
+        this.listSize = 0;
 		// NOTE: not resetting album art, repeat/shuffle, nor playing
 	}
 }

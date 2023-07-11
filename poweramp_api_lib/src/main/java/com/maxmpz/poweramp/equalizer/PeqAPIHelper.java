@@ -28,9 +28,12 @@ import android.content.pm.PackageInfo;
 import android.content.pm.ResolveInfo;
 import android.util.Log;
 
+import com.maxmpz.poweramp.player.PowerampAPI;
 
-public class PeqAPIHelper {
-	private static final String TAG = "PeqAPIHelper";
+
+public enum PeqAPIHelper {
+    ;
+    private static final String TAG = "PeqAPIHelper";
 	private static final boolean LOG = false;
 	
 	private static String sPak;
@@ -44,12 +47,12 @@ public class PeqAPIHelper {
 	 * THREADING: can be called from any thread, though double initialization is possible, but it's OK
 	 * @return resolved and cached package name or null if it's not installed<br>
 	 */
-	public static String getPackageName(Context context) {
-		String pak = sPak;
-		if(pak == null) {
-			ComponentName activityName = getApiActivityComponentName(context);
-			if(activityName != null) {
-				pak = sPak = activityName.getPackageName();
+	public static String getPackageName(final Context context) {
+		String pak = PeqAPIHelper.sPak;
+		if(null == pak) {
+			final ComponentName activityName = PeqAPIHelper.getApiActivityComponentName(context);
+			if(null != activityName) {
+				pak = PeqAPIHelper.sPak = activityName.getPackageName();
 			}
 		}
 		return pak;
@@ -60,16 +63,16 @@ public class PeqAPIHelper {
 	 * THREADING: can be called from any thread, though double initialization is possible, but it's OK
 	 * @return resolved and cached API activity component name, or null if not installed
 	 */
-	public static ComponentName getApiActivityComponentName(Context context) {
-		ComponentName componentName = sApiActivityComponentName;
-		if(componentName == null) {
+	public static ComponentName getApiActivityComponentName(final Context context) {
+		ComponentName componentName = PeqAPIHelper.sApiActivityComponentName;
+		if(null == componentName) {
 			try {
-				ResolveInfo info = context.getPackageManager().resolveActivity(new Intent(PeqAPI.ACTION_API_COMMAND), 0);
-				if(info != null && info.activityInfo != null) {
-					componentName = sApiActivityComponentName = new ComponentName(info.activityInfo.packageName, info.activityInfo.name);
+				final ResolveInfo info = context.getPackageManager().resolveActivity(new Intent(PeqAPI.ACTION_API_COMMAND), 0);
+				if(null != info && null != info.activityInfo) {
+					componentName = PeqAPIHelper.sApiActivityComponentName = new ComponentName(info.activityInfo.packageName, info.activityInfo.name);
 				}
-			} catch(Throwable th) {
-				Log.e(TAG, "", th);
+			} catch(final Throwable th) {
+				Log.e(PeqAPIHelper.TAG, "", th);
 			}
 		}
 		return componentName;
@@ -79,16 +82,16 @@ public class PeqAPIHelper {
 	 * THREADING: can be called from any thread, though double initialization is possible, but it's OK
 	 * @return resolved and cached milk scanner component name, or null if not installed
 	 */
-	public static ComponentName getMilkScannerServiceComponentName(Context context) {
-		ComponentName componentName = sMilkScanServiceComponentName;
-		if(componentName == null) {
+	public static ComponentName getMilkScannerServiceComponentName(final Context context) {
+		ComponentName componentName = PeqAPIHelper.sMilkScanServiceComponentName;
+		if(null == componentName) {
 			try {
-				ResolveInfo info = context.getPackageManager().resolveService(new Intent(PeqAPI.MilkScanner.ACTION_SCAN).setPackage(getPackageName(context)), 0);
-				if(info != null && info.serviceInfo != null) {
-					componentName = sMilkScanServiceComponentName = new ComponentName(info.serviceInfo.packageName, info.serviceInfo.name);
+				final ResolveInfo info = context.getPackageManager().resolveService(new Intent(PowerampAPI.MilkScanner.ACTION_SCAN).setPackage(PeqAPIHelper.getPackageName(context)), 0);
+				if(null != info && null != info.serviceInfo) {
+					componentName = PeqAPIHelper.sMilkScanServiceComponentName = new ComponentName(info.serviceInfo.packageName, info.serviceInfo.name);
 				}
-			} catch(Throwable th) {
-				Log.e(TAG, "", th);
+			} catch(final Throwable th) {
+				Log.e(PeqAPIHelper.TAG, "", th);
 			}
 		}
 		return componentName;
@@ -98,12 +101,12 @@ public class PeqAPIHelper {
 	 * THREADING: can be called from any thread, though double initialization is possible, but it's OK
 	 * @return resolved and cached API receiver component name, or null if not installed
 	 */
-	public static ComponentName getApiReceiverComponentName(Context context) {
-		ComponentName componentName = sApiReceiverComponentName;
-		if(componentName == null) {
-			String pak = getPackageName(context);
-			if(pak != null) {
-				componentName = sApiReceiverComponentName = new ComponentName(pak, PeqAPI.API_RECEIVER_NAME);
+	public static ComponentName getApiReceiverComponentName(final Context context) {
+		ComponentName componentName = PeqAPIHelper.sApiReceiverComponentName;
+		if(null == componentName) {
+			final String pak = PeqAPIHelper.getPackageName(context);
+			if(null != pak) {
+				componentName = PeqAPIHelper.sApiReceiverComponentName = new ComponentName(pak, PeqAPI.API_RECEIVER_NAME);
 			}
 		}
 		return componentName;
@@ -113,26 +116,26 @@ public class PeqAPIHelper {
 	 * THREADING: can be called from any thread, though double initialization is possible, but it's OK
 	 * @return resolved and cached build number<br>
 	 */
-	public static int getPowerampBuild(Context context) {
-		if(sBuild == 0) {
-			String pak = getPackageName(context);
-			if(pak != null) {
+	public static int getPowerampBuild(final Context context) {
+		if(0 == sBuild) {
+			final String pak = PeqAPIHelper.getPackageName(context);
+			if(null != pak) {
 				try {
-					PackageInfo pi = context.getPackageManager().getPackageInfo(pak, 0);
-					sBuild = pi.versionCode > 1000 ? pi.versionCode / 1000 : pi.versionCode;
-				} catch(Throwable th) {
-					Log.e(TAG, "", th);
+					final PackageInfo pi = context.getPackageManager().getPackageInfo(pak, 0);
+                    PeqAPIHelper.sBuild = 1000 < pi.versionCode ? pi.versionCode / 1000 : pi.versionCode;
+				} catch(final Throwable th) {
+					Log.e(PeqAPIHelper.TAG, "", th);
 				}
 			}
 		}
-		return sBuild;
+		return PeqAPIHelper.sBuild;
 	}
 	
 	/**
 	 * THREADING: can be called from any thread<br>
 	 * @return intent to send with sendPAIntent
 	 */
-	public static Intent newAPIIntent(Context context) {
+	public static Intent newAPIIntent(final Context context) {
 		return new Intent(PeqAPI.ACTION_API_COMMAND);
 	}
 
@@ -140,24 +143,24 @@ public class PeqAPIHelper {
 	/**
 	 * THREADING: can be called from any thread<br>
 	 */
-	public static void sendPAIntent(Context context, Intent intent) {
-		sendPAIntent(context, intent, false);
+	public static void sendPAIntent(final Context context, final Intent intent) {
+        PeqAPIHelper.sendPAIntent(context, intent, false);
 	}
 
 	/**
 	 * THREADING: can be called from any thread
 	 * @param sendToActivity if true, we're sending intent to the activity
 	 */
-	public static void sendPAIntent(Context context, Intent intent, boolean sendToActivity) {
+	public static void sendPAIntent(final Context context, final Intent intent, final boolean sendToActivity) {
 		intent.putExtra(PeqAPI.EXTRA_PACKAGE, context.getPackageName());
 		if(sendToActivity) {
-			intent.setComponent(getApiActivityComponentName(context));
+			intent.setComponent(PeqAPIHelper.getApiActivityComponentName(context));
 			if(!(context instanceof Activity)) {
 				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			}
 			context.startActivity(intent);
 		} else {
-			intent.setComponent(getApiReceiverComponentName(context));
+			intent.setComponent(PeqAPIHelper.getApiReceiverComponentName(context));
 			context.sendBroadcast(intent);
 		}
 	}

@@ -31,43 +31,41 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 @SuppressWarnings("deprecation")
-public class FoldersActivity extends ListActivity implements OnItemClickListener, OnItemLongClickListener {
+public class FoldersActivity extends ListActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
 	private static final String TAG = "FoldersActivity";
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState){
+	protected void onCreate(final Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.activity_folders);
 
-		Cursor c = this.getContentResolver().query(PowerampAPI.ROOT_URI.buildUpon().appendEncodedPath("folders").build(),
+		final Cursor c = getContentResolver().query(PowerampAPI.ROOT_URI.buildUpon().appendEncodedPath("folders").build(),
 				new String[]{ "folders._id AS _id", "folders.name AS name", "folders.parent_name AS parent_name" }, null, null, "folders.name COLLATE NOCASE");
-		if(c != null) startManagingCursor(c);
+		if(null != c) this.startManagingCursor(c);
 
-		SimpleCursorAdapter adapter = new SimpleCursorAdapter(
+		final SimpleCursorAdapter adapter = new SimpleCursorAdapter(
 				this, // Context.
 				android.R.layout.two_line_list_item,
 				c,
 				new String[] { "name", "parent_name" },
 				new int[] {android.R.id.text1, android.R.id.text2});
-		setListAdapter(adapter);
+        this.setListAdapter(adapter);
 
-		ListView list = (ListView)findViewById(android.R.id.list);
+		final ListView list = this.findViewById(android.R.id.list);
 		list.setOnItemClickListener(this);
 		list.setOnItemLongClickListener(this);
 	}
 
 	@Override
-	public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2, long id) {
-		Log.w(TAG, "folder long press=" + id);
+	public boolean onItemLongClick(final AdapterView<?> arg0, final View arg1, final int arg2, final long id) {
+		Log.w(FoldersActivity.TAG, "folder long press=" + id);
 
-		Uri.Builder uriB = PowerampAPI.ROOT_URI.buildUpon()
+		final Uri.Builder uriB = PowerampAPI.ROOT_URI.buildUpon()
 				.appendEncodedPath("folders")
 				.appendEncodedPath(Long.toString(id))
 				.appendQueryParameter(PowerampAPI.PARAM_SHUFFLE, Integer.toString(PowerampAPI.ShuffleMode.SHUFFLE_SONGS));
@@ -77,16 +75,16 @@ public class FoldersActivity extends ListActivity implements OnItemClickListener
 				.setData(uriB.build()),
 				MainActivity.FORCE_API_ACTIVITY
 		);
-		finish();
+        this.finish();
 		return true;
 	}
 
 	@Override
-	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long id) {
-		Log.w(TAG, "folder press=" + id);
+	public void onItemClick(final AdapterView<?> arg0, final View arg1, final int arg2, final long id) {
+		Log.w(FoldersActivity.TAG, "folder press=" + id);
 
-		Uri filesUri = PowerampAPI.ROOT_URI.buildUpon().appendEncodedPath("folders").appendEncodedPath(Long.toString(id)).appendEncodedPath("files").build();
+		final Uri filesUri = PowerampAPI.ROOT_URI.buildUpon().appendEncodedPath("folders").appendEncodedPath(Long.toString(id)).appendEncodedPath("files").build();
 
-		startActivity(new Intent(this, TrackListActivity.class).setData(filesUri));
+        this.startActivity(new Intent(this, TrackListActivity.class).setData(filesUri));
 	}
 }

@@ -22,8 +22,9 @@ package com.maxmpz.poweramp.player;
 /**
  * Constants used for Poweramp Track Provider API
  */
-public class TrackProviderConsts {
-	/**
+public enum TrackProviderConsts {
+    ;
+    /**
 	 * Column for optional album artist tag.<br>
 	 * String
 	 */

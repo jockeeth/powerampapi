@@ -73,7 +73,7 @@ class LyricsRequestReceiver : BroadcastReceiver() {
             // NOTE: if it's a stream, we won't get durationMs and it may be generally harder to guess/search/load
             // lyrics for such stream "tracks"
             val isStream = fileType == PowerampAPI.Track.FileType.TYPE_STREAM
-            if(isStream && durationMs <= 0) durationMs = 60 * 1000; // Let's use some fake duration for our generateFakeLyrics
+            if(isStream && durationMs <= 0) durationMs = 60 * 1000 // Let's use some fake duration for our generateFakeLyrics
 
             val debugLine = "ACTION_NEED_LYRICS realId=$realId title=$title album=$album artist=$artist durationMs=$durationMs"
             DebugLines.addDebugLine(debugLine)

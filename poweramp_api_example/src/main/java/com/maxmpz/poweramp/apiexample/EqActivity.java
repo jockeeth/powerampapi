@@ -32,17 +32,12 @@ import android.database.MergeCursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.SimpleCursorAdapter;
-import android.widget.SimpleCursorAdapter.ViewBinder;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -50,7 +45,7 @@ import android.widget.TextView;
 import com.maxmpz.poweramp.player.PowerampAPI;
 import com.maxmpz.poweramp.player.PowerampAPIHelper;
 
-public class EqActivity extends Activity implements OnClickListener, OnCheckedChangeListener, OnSeekBarChangeListener, OnItemSelectedListener {
+public class EqActivity extends Activity implements View.OnClickListener, CompoundButton.OnCheckedChangeListener, SeekBar.OnSeekBarChangeListener, AdapterView.OnItemSelectedListener {
 	private static final String TAG = "EqActivity";
 	private static final boolean LOG = true;
 
@@ -66,39 +61,39 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 
 	@SuppressWarnings({ "resource", "deprecation" })
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		// Ask for PA equ state update immediately by sending "empty" SET_EQU_ENABLED command.
 		// The reply may be delayed up to 250ms, so UI should accommodate for that (update asynchronously)
-		requestEqStatus();
+        this.requestEqStatus();
 
 		setContentView(R.layout.activity_eq);
 
-		((CheckBox)findViewById(R.id.dynamic)).setOnCheckedChangeListener(this);
-		findViewById(R.id.commit_eq).setOnClickListener(this);
+		((CheckBox) this.findViewById(R.id.dynamic)).setOnCheckedChangeListener(this);
+        this.findViewById(R.id.commit_eq).setOnClickListener(this);
 
 		// Create and bind spinner which binds to available Poweramp presets.
-		Spinner presetSpinner = (Spinner)findViewById(R.id.preset_spinner);
-		String[] cols = new String[] { "_id", "name" };
-		Cursor c = getContentResolver().query(PowerampAPI.ROOT_URI.buildUpon().appendEncodedPath("eq_presets").build(),
+		final Spinner presetSpinner = this.findViewById(R.id.preset_spinner);
+		final String[] cols = { "_id", "name" };
+		final Cursor c = this.getContentResolver().query(PowerampAPI.ROOT_URI.buildUpon().appendEncodedPath("eq_presets").build(),
 				cols, null, null, "name");
-		if(c != null) startManagingCursor(c);
+		if(null != c) this.startManagingCursor(c);
 		// Add first empty item to the merged cursor via matrix cursor with single row.
-		MatrixCursor mc = new MatrixCursor(cols);
+		final MatrixCursor mc = new MatrixCursor(cols);
 		mc.addRow(new Object[]{ PowerampAPI.NO_ID, "" });
-		MergeCursor mrgc = new MergeCursor(new Cursor[]{ mc, c });
+		final MergeCursor mrgc = new MergeCursor(new Cursor[]{ mc, c });
 
-		SimpleCursorAdapter adapter = new SimpleCursorAdapter(this,
+		final SimpleCursorAdapter adapter = new SimpleCursorAdapter(this,
 				android.R.layout.simple_spinner_dropdown_item,
 				mrgc,
 				new String[] { "name" },
 				new int[] { android.R.id.text1 },
 				0);
 
-		adapter.setViewBinder(new ViewBinder() {
+		adapter.setViewBinder(new SimpleCursorAdapter.ViewBinder() {
 			@Override
-			public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
+			public boolean setViewValue(final View view, final Cursor cursor, final int columnIndex) {
 				((TextView)view).setText(cursor.getString(1));
 				return true;
 			}
@@ -107,8 +102,8 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 		presetSpinner.setAdapter(adapter);
 		presetSpinner.setOnItemSelectedListener(this);
 
-		((CheckBox)findViewById(R.id.eq)).setOnCheckedChangeListener(this);
-		((CheckBox)findViewById(R.id.tone)).setOnCheckedChangeListener(this);
+		((CheckBox) this.findViewById(R.id.eq)).setOnCheckedChangeListener(this);
+		((CheckBox) this.findViewById(R.id.tone)).setOnCheckedChangeListener(this);
 	}
 
 	private void requestEqStatus() {
@@ -122,11 +117,11 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	 * As this activity always syncs everything with the actual state of Poweramp, this automatic restoring of state is just non needed.
 	 */
 	@Override
-	protected void onSaveInstanceState(Bundle outState) {
+	protected void onSaveInstanceState(final Bundle outState) {
 	}
 
 	@Override
-	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+	protected void onRestoreInstanceState(final Bundle savedInstanceState) {
 	}
 
 
@@ -136,7 +131,7 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
  	 */
 	@Override
 	protected void onPause() {
-		unregister();
+        this.unregister();
 
 		super.onPause();
 	}
@@ -148,19 +143,19 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	protected void onResume() {
 		super.onResume();
 
-		registerAndLoadStatus();
+        this.registerAndLoadStatus();
 
 		// Ask PA for eq state as, while on background, we probably were denied of intent processing due to
 		// Android 8+ background limitations
-		requestEqStatus();
+        this.requestEqStatus();
 	}
 
 
 	@Override
 	protected void onDestroy() {
-		unregister();
+        this.unregister();
 
-		mEquReceiver = null;
+        this.mEquReceiver = null;
 
 		super.onDestroy();
 	}
@@ -172,74 +167,74 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	 * NOTE: For Poweramp v3 this intent is not sticky anymore
 	 */
 	private void registerAndLoadStatus() {
-		mEquIntent = registerReceiver(mEquReceiver, new IntentFilter(PowerampAPI.ACTION_EQU_CHANGED));
-		if(LOG) Log.w(TAG, "registerAndLoadStatus mEquIntent=>" + mEquIntent);
+        this.mEquIntent = this.registerReceiver(this.mEquReceiver, new IntentFilter(PowerampAPI.ACTION_EQU_CHANGED));
+		if(EqActivity.LOG) Log.w(EqActivity.TAG, "registerAndLoadStatus mEquIntent=>" + this.mEquIntent);
 	}
 
 	private void unregister() {
-		if(mEquReceiver != null) {
+		if(null != mEquReceiver) {
 			try {
-				unregisterReceiver(mEquReceiver);
-			} catch(Exception ignored) {
+                this.unregisterReceiver(this.mEquReceiver);
+			} catch(final Exception ignored) {
 			}
 		}
 	}
 
 	private BroadcastReceiver mEquReceiver = new BroadcastReceiver() {
 		@Override
-		public void onReceive(Context context, Intent intent) {
-			mEquIntent = intent;
+		public void onReceive(final Context context, final Intent intent) {
+            EqActivity.this.mEquIntent = intent;
 
-			if(LOG) debugDumpEquIntent(intent);
+			if(EqActivity.LOG) EqActivity.this.debugDumpEquIntent(intent);
 
-			updateEqu();
+            EqActivity.this.updateEqu();
 		}
 
 	};
 
 	void updateEqu() {
-		if(mEquIntent == null) {
-			if(LOG) Log.e(TAG, "updateEqu IGNORE !mEquIntent");
+		if(null == mEquIntent) {
+			if(EqActivity.LOG) Log.e(EqActivity.TAG, "updateEqu IGNORE !mEquIntent");
 			return;
 		}
-		if(LOG) Log.w(TAG, "updateEqu", new Exception());
+		if(EqActivity.LOG) Log.w(EqActivity.TAG, "updateEqu", new Exception());
 
-		final CheckBox eq = (CheckBox)findViewById(R.id.eq);
-		boolean equEnabled = mEquIntent.getBooleanExtra(PowerampAPI.EXTRA_EQU, false);
+		CheckBox eq = this.findViewById(R.id.eq);
+		final boolean equEnabled = this.mEquIntent.getBooleanExtra(PowerampAPI.EXTRA_EQU, false);
 		if(eq.isChecked() != equEnabled) {
-			mSettingEqu = true;
+            this.mSettingEqu = true;
 			eq.setChecked(equEnabled);
 		}
 
-		final CheckBox tone = (CheckBox)findViewById(R.id.tone);
-		boolean toneEnabled = mEquIntent.getBooleanExtra(PowerampAPI.EXTRA_TONE, false);
+		CheckBox tone = this.findViewById(R.id.tone);
+		final boolean toneEnabled = this.mEquIntent.getBooleanExtra(PowerampAPI.EXTRA_TONE, false);
 		if(tone.isChecked() != toneEnabled) {
-			mSettingTone = true;
+            this.mSettingTone = true;
 			tone.setChecked(toneEnabled);
 		}
 
-		String presetString = mEquIntent.getStringExtra(PowerampAPI.EXTRA_VALUE);
-		if(presetString == null || presetString.length() == 0) {
-			if(LOG) Log.w(TAG, "updateEqu !presetString");
+		final String presetString = this.mEquIntent.getStringExtra(PowerampAPI.EXTRA_VALUE);
+		if(null == presetString || 0 == presetString.length()) {
+			if(EqActivity.LOG) Log.w(EqActivity.TAG, "updateEqu !presetString");
 			return;
 		}
 
-		if(!mEquBuilt) {
-			buildEquUI(presetString);
-			mEquBuilt = true;
+		if(!this.mEquBuilt) {
+            this.buildEquUI(presetString);
+            this.mEquBuilt = true;
 		} else {
-			updateEquUI(presetString);
+            this.updateEquUI(presetString);
 		}
 
-		long id = mEquIntent.getLongExtra(PowerampAPI.EXTRA_ID, PowerampAPI.NO_ID);
-		if(LOG) Log.w(TAG, "updateEqu id=" + id);
+		final long id = this.mEquIntent.getLongExtra(PowerampAPI.EXTRA_ID, PowerampAPI.NO_ID);
+		if(EqActivity.LOG) Log.w(EqActivity.TAG, "updateEqu id=" + id);
 
-		Spinner presetSpinner = (Spinner)findViewById(R.id.preset_spinner);
-		int count = presetSpinner.getAdapter().getCount();
+		final Spinner presetSpinner = this.findViewById(R.id.preset_spinner);
+		final int count = presetSpinner.getAdapter().getCount();
 		for(int i = 0; i < count; i++) {
 			if(presetSpinner.getAdapter().getItemId(i) == id) {
 				if(presetSpinner.getSelectedItemPosition() != i) {
-					mSettingPreset = true;
+                    this.mSettingPreset = true;
 					presetSpinner.setSelection(i);
 				}
 				break;
@@ -250,38 +245,38 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	/**
 	 * This method parses the equalizer serialized "presetString" and creates appropriate seekbars.
  	 */
-	private void buildEquUI(String string) {
-		if(LOG) Log.w(TAG, "buildEquUI string=" + string);
-		String[] pairs = sSemicolonSplitRe.split(string);
-		TableLayout equLayout = (TableLayout)findViewById(R.id.equ_layout);
+	private void buildEquUI(final String string) {
+		if(EqActivity.LOG) Log.w(EqActivity.TAG, "buildEquUI string=" + string);
+		final String[] pairs = EqActivity.sSemicolonSplitRe.split(string);
+		final TableLayout equLayout = this.findViewById(R.id.equ_layout);
 
-		for(String pair : pairs) {
-			String[] nameValue = sEqualSplitRe.split(pair, 2);
-			if(nameValue.length == 2) {
-				String name = nameValue[0];
+		for(final String pair : pairs) {
+			final String[] nameValue = EqActivity.sEqualSplitRe.split(pair, 2);
+			if(2 == nameValue.length) {
+				final String name = nameValue[0];
 
 				try {
-					float value = Float.parseFloat(nameValue[1]);
+					final float value = Float.parseFloat(nameValue[1]);
 
-					TableRow row = new TableRow(this);
+					final TableRow row = new TableRow(this);
 
-					TextView label = new TextView(this);
+					final TextView label = new TextView(this);
 					label.setText(name);
-					TableRow.LayoutParams lp = new TableRow.LayoutParams();
-					lp.height = lp.width = TableRow.LayoutParams.WRAP_CONTENT;
+					final TableRow.LayoutParams lp = new TableRow.LayoutParams();
+					lp.height = lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
 					row.addView(label, lp);
 
-					SeekBar bar = new SeekBar(this);
+					final SeekBar bar = new SeekBar(this);
 					bar.setOnSeekBarChangeListener(this);
 					bar.setTag(name);
-					setBandValue(name, value, bar);
+                    this.setBandValue(name, value, bar);
 					row.addView(bar, lp);
 
 					equLayout.addView(row);
 
-				} catch(NumberFormatException ex) {
+				} catch(final NumberFormatException ex) {
 					ex.printStackTrace();
-					Log.e(TAG, "failed to parse eq value=" + nameValue[1]);
+					Log.e(EqActivity.TAG, "failed to parse eq value=" + nameValue[1]);
 				}
 			}
 		}
@@ -290,64 +285,64 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	/**
 	 * Preamp, bass/treble and equ bands have different scaling. This method ensures correct scaling is applied.
  	 */
-	void setBandValue(String name, float value, SeekBar bar) {
-		if(LOG) Log.w(TAG, "setBandValue name=" + name + " value=" + value);
+	void setBandValue(final String name, final float value, final SeekBar bar) {
+		if(EqActivity.LOG) Log.w(EqActivity.TAG, "setBandValue name=" + name + " value=" + value);
 		if("preamp".equals(name)) {
 			bar.setMax(200);
-			bar.setProgress((int)(value * 100f));
+			bar.setProgress((int)(value * 100.0f));
 		} else if("bass".equals(name) || "treble".equals(name)) {
 			bar.setMax(100);
-			bar.setProgress((int)(value * 100f));
+			bar.setProgress((int)(value * 100.0f));
 		} else {
 			bar.setMax(200);
-			bar.setProgress((int)(value * 100f + 100f));
+			bar.setProgress((int)(value * 100.0f + 100.0f));
 		}
 	}
 
 	/**
 	 * Almost the same as buildEquUI, just do the UI update without building it
 	 */
-	private void updateEquUI(String string) {
-		if(LOG) Log.w(TAG, "updateEquUI string=" + string);
-		String[] pairs = sSemicolonSplitRe.split(string);
-		TableLayout equLayout = (TableLayout)findViewById(R.id.equ_layout);
+	private void updateEquUI(final String string) {
+		if(EqActivity.LOG) Log.w(EqActivity.TAG, "updateEquUI string=" + string);
+		final String[] pairs = EqActivity.sSemicolonSplitRe.split(string);
+		final TableLayout equLayout = this.findViewById(R.id.equ_layout);
 
 		for(int i = 0, pairsLength = pairs.length; i < pairsLength; i++) {
-			String[] nameValue = sEqualSplitRe.split(pairs[i], 2);
-			if(nameValue.length == 2) {
-				String name = nameValue[0];
+			final String[] nameValue = EqActivity.sEqualSplitRe.split(pairs[i], 2);
+			if(2 == nameValue.length) {
+				final String name = nameValue[0];
 				try {
-					float value = Float.parseFloat(nameValue[1]);
+					final float value = Float.parseFloat(nameValue[1]);
 
-					SeekBar bar = (SeekBar)((ViewGroup)equLayout.getChildAt(i)).getChildAt(1);
-					if(bar == null) {
-						Log.w(TAG, "no bar=" + name);
+					final SeekBar bar = (SeekBar)((ViewGroup)equLayout.getChildAt(i)).getChildAt(1);
+					if(null == bar) {
+						Log.w(EqActivity.TAG, "no bar=" + name);
 						continue;
 					}
-					setBandValue(name, value, bar);
-				} catch(NumberFormatException ex) {
+                    this.setBandValue(name, value, bar);
+				} catch(final NumberFormatException ex) {
 					ex.printStackTrace();
-					Log.e(TAG, "failed to parse eq value=" + nameValue[1]);
+					Log.e(EqActivity.TAG, "failed to parse eq value=" + nameValue[1]);
 				}
 			}
 		}
 	}
 
-	void debugDumpEquIntent(Intent intent) {
-		if(intent != null) {
-			String presetName = intent.getStringExtra(PowerampAPI.EXTRA_NAME);
-			String presetString = intent.getStringExtra(PowerampAPI.EXTRA_VALUE);
-			long id = mEquIntent.getLongExtra(PowerampAPI.EXTRA_ID, PowerampAPI.NO_ID);
-			Log.w(TAG, "debugDumpEquIntent presetName=" + presetName + " presetString=" + presetString + " id=" + id);
+	void debugDumpEquIntent(final Intent intent) {
+		if(null != intent) {
+			final String presetName = intent.getStringExtra(PowerampAPI.EXTRA_NAME);
+			final String presetString = intent.getStringExtra(PowerampAPI.EXTRA_VALUE);
+			final long id = this.mEquIntent.getLongExtra(PowerampAPI.EXTRA_ID, PowerampAPI.NO_ID);
+			Log.w(EqActivity.TAG, "debugDumpEquIntent presetName=" + presetName + " presetString=" + presetString + " id=" + id);
 		} else {
-			Log.e(TAG, "debugDumpEquIntent: intent is null");
+			Log.e(EqActivity.TAG, "debugDumpEquIntent: intent is null");
 		}
 	}
 
 	@Override
-	public void onClick(View v) {
+	public void onClick(final View v) {
 		if(v.getId() == R.id.commit_eq) {
-			commitEq();
+            this.commitEq();
 		}
 	}
 
@@ -355,29 +350,29 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	 * Event handler for the checkboxes
 	 */
 	@Override
-	public void onCheckedChanged(CompoundButton view, boolean isChecked) {
-		Log.w(TAG, "onCheckedChanged=" + view);
-		int id = view.getId();
+	public void onCheckedChanged(final CompoundButton view, final boolean isChecked) {
+		Log.w(EqActivity.TAG, "onCheckedChanged=" + view);
+		final int id = view.getId();
 		if(id == R.id.dynamic) {
-			findViewById(R.id.commit_eq).setEnabled(!isChecked);
+            this.findViewById(R.id.commit_eq).setEnabled(!isChecked);
 		} else if(id == R.id.eq) {
-			if(!mSettingEqu) {
+			if(!this.mSettingEqu) {
 				PowerampAPIHelper.sendPAIntent(this, new Intent(PowerampAPI.ACTION_API_COMMAND)
 								.putExtra(PowerampAPI.EXTRA_COMMAND, PowerampAPI.Commands.SET_EQU_ENABLED)
 								.putExtra(PowerampAPI.EXTRA_EQU, isChecked),
 						MainActivity.FORCE_API_ACTIVITY
 				);
 			}
-			mSettingEqu = false;
+            this.mSettingEqu = false;
 		} else if(id == R.id.tone) {
-			if(!mSettingTone) {
+			if(!this.mSettingTone) {
 				PowerampAPIHelper.sendPAIntent(this, new Intent(PowerampAPI.ACTION_API_COMMAND)
 								.putExtra(PowerampAPI.EXTRA_COMMAND, PowerampAPI.Commands.SET_EQU_ENABLED)
 								.putExtra(PowerampAPI.EXTRA_TONE, isChecked),
 						MainActivity.FORCE_API_ACTIVITY
 				);
 			}
-			mSettingTone = false;
+            this.mSettingTone = false;
 		}
 	}
 
@@ -385,14 +380,14 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	 * Generates and sends presetString to Poweramp
  	 */
 	private void commitEq() {
-		StringBuilder presetString = new StringBuilder();
+		final StringBuilder presetString = new StringBuilder();
 
-		TableLayout equLayout = (TableLayout)findViewById(R.id.equ_layout);
-		int count = equLayout.getChildCount();
-		for(int i = count - 1; i >= 0; i--) {
-			SeekBar bar = (SeekBar)((ViewGroup)equLayout.getChildAt(i)).getChildAt(1);
-			String name = (String)bar.getTag();
-			float value = seekBarToValue(name, bar.getProgress());
+		final TableLayout equLayout = this.findViewById(R.id.equ_layout);
+		final int count = equLayout.getChildCount();
+		for(int i = count - 1; 0 <= i; i--) {
+			final SeekBar bar = (SeekBar)((ViewGroup)equLayout.getChildAt(i)).getChildAt(1);
+			final String name = (String)bar.getTag();
+			final float value = this.seekBarToValue(name, bar.getProgress());
 			presetString.append(name).append("=").append(value).append(";");
 		}
 
@@ -406,12 +401,12 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	/**
 	 * Applies correct seekBar-to-float scaling
  	 */
-	private float seekBarToValue(String name, int progress) {
-		float value;
+	private float seekBarToValue(final String name, final int progress) {
+		final float value;
 		if("preamp".equals(name) || "bass".equals(name) || "treble".equals(name)) {
-			value = (float)progress / 100.f;
+			value = progress / 100.0f;
 		} else {
-			value = (float)(progress - 100) / 100.f;
+			value = (progress - 100) / 100.0f;
 		}
 		return value;
 	}
@@ -420,11 +415,11 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	 * Process Eq band change.
 	 */
 	@Override
-	public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+	public void onProgressChanged(final SeekBar bar, final int progress, final boolean fromUser) {
 
-		if(((CheckBox)findViewById(R.id.dynamic)).isChecked()) {
-			String name = (String)bar.getTag();
-			float value = seekBarToValue(name, bar.getProgress());
+		if(((CheckBox) this.findViewById(R.id.dynamic)).isChecked()) {
+			final String name = (String)bar.getTag();
+			final float value = this.seekBarToValue(name, bar.getProgress());
 			PowerampAPIHelper.sendPAIntent(this, new Intent(PowerampAPI.ACTION_API_COMMAND)
 					.putExtra(PowerampAPI.EXTRA_COMMAND, PowerampAPI.Commands.SET_EQU_BAND)
 					.putExtra(PowerampAPI.EXTRA_NAME, name)
@@ -435,30 +430,30 @@ public class EqActivity extends Activity implements OnClickListener, OnCheckedCh
 	}
 
 	@Override
-	public void onStartTrackingTouch(SeekBar seekBar) {
+	public void onStartTrackingTouch(final SeekBar seekBar) {
 	}
 
 	@Override
-	public void onStopTrackingTouch(SeekBar seekBar) {
+	public void onStopTrackingTouch(final SeekBar seekBar) {
 	}
 
 	/**
 	 * Event handler for Presets spinner
  	 */
 	@Override
-	public void onItemSelected(AdapterView<?> adapter, View item, int pos, long id) {
-		if(!mSettingPreset) {
+	public void onItemSelected(final AdapterView<?> adapter, final View item, final int pos, final long id) {
+		if(!this.mSettingPreset) {
 			PowerampAPIHelper.sendPAIntent(this, new Intent(PowerampAPI.ACTION_API_COMMAND)
 					.putExtra(PowerampAPI.EXTRA_COMMAND, PowerampAPI.Commands.SET_EQU_PRESET)
 					.putExtra(PowerampAPI.EXTRA_ID, id),
 					MainActivity.FORCE_API_ACTIVITY
 			);
 		} else {
-			mSettingPreset = false;
+            this.mSettingPreset = false;
 		}
 	}
 
 	@Override
-	public void onNothingSelected(AdapterView<?> arg0) {
+	public void onNothingSelected(final AdapterView<?> arg0) {
 	}
 }

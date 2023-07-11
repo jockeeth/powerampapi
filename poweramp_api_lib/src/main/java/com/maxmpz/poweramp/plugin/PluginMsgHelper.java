@@ -26,13 +26,15 @@ import java.nio.IntBuffer;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 
-public class PluginMsgHelper {
-	public static class PluginMsgException extends RuntimeException {
+public enum PluginMsgHelper {
+    ;
+
+    public static class PluginMsgException extends RuntimeException {
 		private static final long serialVersionUID = -5131019933670409856L;
 
 		public PluginMsgException() {}
 
-		public PluginMsgException(@NonNull String msg) {
+		public PluginMsgException(@NonNull final String msg) {
 			super(msg);
 		}
 	}
@@ -41,11 +43,11 @@ public class PluginMsgHelper {
 	public static final int MSG_TAG 			 = 0xF1F2F3F4;
 	public static final int HEADER_SIZE_INTS   = 8;
 	public static final int MAX_SIZE_INTS		 = 1024;
-	public static final int MAX_SIZE_BYTES	 = MAX_SIZE_INTS * 4;
-	public static final int HEADER_SIZE_BYTES  = HEADER_SIZE_INTS * 4;
+	public static final int MAX_SIZE_BYTES	 = PluginMsgHelper.MAX_SIZE_INTS * 4;
+	public static final int HEADER_SIZE_BYTES  = PluginMsgHelper.HEADER_SIZE_INTS * 4;
 
-	public static int IX_PLUGIN_ID      = 0;
-	public static int IX_PLUGIN_ID_INT  = 0;
+	public static int IX_PLUGIN_ID;
+	public static int IX_PLUGIN_ID_INT;
 	public static final int IX_TAG            = 4 * 4; // 1
 	public static final int IX_MSG_ID         = 5 * 4; // 2
 	public static final int IX_FLAGS          = 6 * 4; // 3
@@ -63,39 +65,39 @@ public class PluginMsgHelper {
 	public static int MSG_ID_BROADCAST          = -1;
 
 
-	public static int calcBufferSizeInts(int desiredSizeInts) {
-		return HEADER_SIZE_INTS + desiredSizeInts;
+	public static int calcBufferSizeInts(final int desiredSizeInts) {
+		return PluginMsgHelper.HEADER_SIZE_INTS + desiredSizeInts;
 	}
 
-	public static int calcBufferSizeBytes(int desiredSizeBytes) {
-		return HEADER_SIZE_BYTES + desiredSizeBytes;
+	public static int calcBufferSizeBytes(final int desiredSizeBytes) {
+		return PluginMsgHelper.HEADER_SIZE_BYTES + desiredSizeBytes;
 	}
 
-	private static void writeHeader(int @NonNull[] buf, int pluginID, int msgID, int flags, int desiredSizeInts) {
+	private static void writeHeader(final int @NonNull[] buf, final int pluginID, final int msgID, final int flags, final int desiredSizeInts) {
 		buf[0] = pluginID;
 		// 3 ints are zeros (reserved for Poweramp msg header).
-		buf[IX_TAG / 4] = MSG_TAG;
-		buf[IX_MSG_ID / 4] = msgID;
-		buf[IX_FLAGS / 4] = flags;
-		buf[IX_DATA_SIZE / 4] = desiredSizeInts * 4;
+		buf[PluginMsgHelper.IX_TAG / 4] = PluginMsgHelper.MSG_TAG;
+		buf[PluginMsgHelper.IX_MSG_ID / 4] = msgID;
+		buf[PluginMsgHelper.IX_FLAGS / 4] = flags;
+		buf[PluginMsgHelper.IX_DATA_SIZE / 4] = desiredSizeInts * 4;
 	}
 
-	private static void writeHeader(@NonNull ByteBuffer buf, int pluginID, int msgID, int flags, int desiredSizeBytes) {
+	private static void writeHeader(@NonNull final ByteBuffer buf, final int pluginID, final int msgID, final int flags, final int desiredSizeBytes) {
 		buf.putInt(pluginID);
 		// 3 ints are zeros (reserved for Poweramp msg header).
-		buf.position(IX_TAG);
-		buf.putInt(MSG_TAG);
+		buf.position(PluginMsgHelper.IX_TAG);
+		buf.putInt(PluginMsgHelper.MSG_TAG);
 		buf.putInt(msgID);
 		buf.putInt(flags);
 		buf.putInt(desiredSizeBytes);
 	}
 
-	public static int @NonNull[] createIntMsgBuffer(int pluginID, int msgID, int flags, int desiredSizeInts) {
-		if(desiredSizeInts > MAX_SIZE_INTS) {
-			throw new PluginMsgException("bad desiredSizeInts=" + desiredSizeInts + " MAX_SIZE_INTS=" + MAX_SIZE_INTS);
+	public static int @NonNull[] createIntMsgBuffer(final int pluginID, final int msgID, final int flags, final int desiredSizeInts) {
+		if(MAX_SIZE_INTS < desiredSizeInts) {
+			throw new PluginMsgException("bad desiredSizeInts=" + desiredSizeInts + " MAX_SIZE_INTS=" + PluginMsgHelper.MAX_SIZE_INTS);
 		}
-		int[] buf = new int[calcBufferSizeInts(desiredSizeInts)];
-		writeHeader(buf, pluginID, msgID, flags, desiredSizeInts);
+		final int[] buf = new int[PluginMsgHelper.calcBufferSizeInts(desiredSizeInts)];
+        PluginMsgHelper.writeHeader(buf, pluginID, msgID, flags, desiredSizeInts);
 		return buf;
 	}
 
@@ -103,48 +105,48 @@ public class PluginMsgHelper {
 	 * NOTE: returned ByteBuffer is positioned to the first data position<br>
 	 * NOTE: direct buffer makes no sense in our case and is slower<br>
 	 */
-	public static @NonNull ByteBuffer createBufferMsgBuffer(int pluginID, int msgID, int flags, int desiredSizeBytes) {
-		if(desiredSizeBytes > MAX_SIZE_BYTES) {
-			throw new PluginMsgException("bad desiredSizeBytes=" + MAX_SIZE_BYTES + " MAX_SIZE_BYTES=" + MAX_SIZE_BYTES);
+	public static @NonNull ByteBuffer createBufferMsgBuffer(final int pluginID, final int msgID, final int flags, final int desiredSizeBytes) {
+		if(MAX_SIZE_BYTES < desiredSizeBytes) {
+			throw new PluginMsgException("bad desiredSizeBytes=" + PluginMsgHelper.MAX_SIZE_BYTES + " MAX_SIZE_BYTES=" + PluginMsgHelper.MAX_SIZE_BYTES);
 		}
-		ByteBuffer buf = ByteBuffer.allocate(calcBufferSizeBytes(desiredSizeBytes));
+		final ByteBuffer buf = ByteBuffer.allocate(PluginMsgHelper.calcBufferSizeBytes(desiredSizeBytes));
 		buf.order(ByteOrder.LITTLE_ENDIAN);
-		writeHeader(buf, pluginID, msgID, flags, desiredSizeBytes);
+        PluginMsgHelper.writeHeader(buf, pluginID, msgID, flags, desiredSizeBytes);
 		return buf;
 	}
 
-	public static @NonNull String msgBufferAsString(int @Nullable[] buf) {
-		if(buf == null) {
+	public static @NonNull String msgBufferAsString(final int @Nullable[] buf) {
+		if(null == buf) {
 			return "null";
 		}
-		if(buf.length < HEADER_SIZE_INTS) {
+		if(HEADER_SIZE_INTS > buf.length) {
 			throw new PluginMsgException("bad buf length=" + buf.length);
 		}
-		return toString(buf);
+		return PluginMsgHelper.toString(buf);
 	}
 
-	public static @NonNull String msgBufferAsString(@NonNull ByteBuffer buf) {
-		if(buf.capacity() < HEADER_SIZE_BYTES) {
+	public static @NonNull String msgBufferAsString(@NonNull final ByteBuffer buf) {
+		if(HEADER_SIZE_BYTES > buf.capacity()) {
 			throw new PluginMsgException("bad buf capacity=" + buf.capacity());
 		}
-		int pos = buf.position();
+		final int pos = buf.position();
 		buf.position(0);
-		IntBuffer intBuf = buf.asIntBuffer();
+		final IntBuffer intBuf = buf.asIntBuffer();
 		buf.position(pos);
-		int[] ar = new int[intBuf.capacity()];
+		final int[] ar = new int[intBuf.capacity()];
 		intBuf.get(ar);
-		return toString(ar);
+		return PluginMsgHelper.toString(ar);
 	}
 
 	@SuppressWarnings("null")
-	private static @NonNull String toString(int @NonNull[] array) {
-		if (array == null) {
+	private static @NonNull String toString(final int @NonNull[] array) {
+		if (null == array) {
 			return "null";
 		}
-		if (array.length == 0) {
+		if (0 == array.length) {
 			return "[]";
 		}
-		StringBuilder sb = new StringBuilder(array.length * 6);
+		final StringBuilder sb = new StringBuilder(array.length * 6);
 		sb.append('[');
 		sb.append(array[0]);
 		for (int i = 1; i < array.length; i++) {

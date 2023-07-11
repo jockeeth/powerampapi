@@ -30,15 +30,17 @@ public abstract class BaseWidgetProvider extends AppWidgetProvider implements
 		public int id;
 	}
 
-	public static final class ShuffleModeV140 {
-		public static final int SHUFFLE_NONE = 0;
+	public enum ShuffleModeV140 {
+        ;
+        public static final int SHUFFLE_NONE = 0;
 		public static final int SHUFFLE_ALL = 1;
 		public static final int SHUFFLE_IN_CAT = 2;
 		public static final int SHUFFLE_HIER = 3;
 	}
 
-	public static final class RepeatModeV140 {
-		public static final int REPEAT_NONE = 0;
+	public enum RepeatModeV140 {
+        ;
+        public static final int REPEAT_NONE = 0;
 		public static final int REPEAT_ALL = 1;
 		public static final int REPEAT_SONG = 2;
 		public static final int REPEAT_CAT = 3;
@@ -66,22 +68,22 @@ public abstract class BaseWidgetProvider extends AppWidgetProvider implements
 
 	// NOTE: called by system
 	@Override
-	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-		if(appWidgetIds.length == 0) {
-			if(LOG) Log.e(TAG, "no widget ids");
+	public void onUpdate(final Context context, final AppWidgetManager appWidgetManager, final int[] appWidgetIds) {
+		if(0 == appWidgetIds.length) {
+			if(BaseWidgetProvider.LOG) Log.e(BaseWidgetProvider.TAG, "no widget ids");
 			return;
 		}
 
-		if(LOG) Log.w(TAG, "onUpdate ids=" + Arrays.toString(appWidgetIds));
+		if(BaseWidgetProvider.LOG) Log.w(BaseWidgetProvider.TAG, "onUpdate ids=" + Arrays.toString(appWidgetIds));
 
-		WidgetUpdater widgetUpdater = getWidgetUpdater(context);
+		final WidgetUpdater widgetUpdater = this.getWidgetUpdater(context);
 
 		try {
 
 			widgetUpdater.updateSafe(this, true, true, appWidgetIds); // Immediate update, ignores power state
 
-		} catch(Throwable th) {
-			Log.e(TAG, "", th);
+		} catch(final Throwable th) {
+			Log.e(BaseWidgetProvider.TAG, "", th);
 		}
 	}
 
@@ -89,62 +91,62 @@ public abstract class BaseWidgetProvider extends AppWidgetProvider implements
 
 	// THREADING: any
 	@Override
-	public @Nullable WidgetUpdateData pushUpdate(Context context, @NonNull SharedPreferences prefs, int @Nullable[] ids,
-		boolean mediaRemoved, @NonNull WidgetUpdateData data
+	public @Nullable WidgetUpdateData pushUpdate(final Context context, @NonNull final SharedPreferences prefs, int @Nullable[] ids,
+                                                 final boolean mediaRemoved, @NonNull final WidgetUpdateData data
 	) {
-		AppWidgetManager appWidgetManager = mAppWidgetManager;
-		if(appWidgetManager == null) {
-			appWidgetManager = mAppWidgetManager = AppWidgetManager.getInstance(context); 
+		AppWidgetManager appWidgetManager = this.mAppWidgetManager;
+		if(null == appWidgetManager) {
+			appWidgetManager = this.mAppWidgetManager = AppWidgetManager.getInstance(context);
 		}
 		
-		if(ids == null) {
+		if(null == ids) {
 			try { // java.lang.RuntimeException: system server dead?  at android.appwidget.AppWidgetManager.getAppWidgetIds(AppWidgetManager.java:492) at com.maxmpz.audioplayer.widgetpackcommon.BaseWidgetProvider (":139)
 				long start;
-				if(LOG) start = System.nanoTime();
+				if(BaseWidgetProvider.LOG) start = System.nanoTime();
 				
-				if(mComponentName == null) {
-					mComponentName = new ComponentName(context, this.getClass());
+				if(null == mComponentName) {
+                    this.mComponentName = new ComponentName(context, getClass());
 				}
-				ids = appWidgetManager.getAppWidgetIds(mComponentName);
+				ids = appWidgetManager.getAppWidgetIds(this.mComponentName);
 
-				if(LOG) Log.w(TAG, "pushUpdate getAppWidgetIds in=" + (System.nanoTime() - start) / 1000 + " =>ids=" + Arrays.toString(ids) + " me=" + this);
-			} catch(Exception ex) {
-				Log.e(TAG, "", ex);
+				if(BaseWidgetProvider.LOG) Log.w(BaseWidgetProvider.TAG, "pushUpdate getAppWidgetIds in=" + (System.nanoTime() - start) / 1000 + " =>ids=" + Arrays.toString(ids) + " me=" + this);
+			} catch(final Exception ex) {
+				Log.e(BaseWidgetProvider.TAG, "", ex);
 			}
 		}
 
-		if(ids == null || ids.length == 0) {
-			if(LOG) Log.w(TAG, "pushUpdate FAIL no ids me=" + this);
+		if(null == ids || 0 == ids.length) {
+			if(BaseWidgetProvider.LOG) Log.w(BaseWidgetProvider.TAG, "pushUpdate FAIL no ids me=" + this);
 			return null;
 		}
 
-		if(LOG) Log.w(TAG, "pushUpdate ids to update: " + Arrays.toString(ids) + " data=" + data + " me=" + this);
+		if(BaseWidgetProvider.LOG) Log.w(BaseWidgetProvider.TAG, "pushUpdate ids to update: " + Arrays.toString(ids) + " data=" + data + " me=" + this);
 
 		try {
-			for(int id : ids) {
-				if(id == 0) { // Skip possible zero ids
-					if(LOG) Log.w(TAG, "pushUpdate SKIP as ids[0] me=" + this);
+			for(final int id : ids) {
+				if(0 == id) { // Skip possible zero ids
+					if(BaseWidgetProvider.LOG) Log.w(BaseWidgetProvider.TAG, "pushUpdate SKIP as ids[0] me=" + this);
 					break;
 				}
-				RemoteViews rv = update(context, data, prefs, id); // java.lang.RuntimeException: Could not write bitmap to parcel blob.
+				final RemoteViews rv = this.update(context, data, prefs, id); // java.lang.RuntimeException: Could not write bitmap to parcel blob.
 				appWidgetManager.updateAppWidget(id, rv);
 			}
 
-		} catch(Exception ex) {
-			Log.e(TAG, "", ex);
+		} catch(final Exception ex) {
+			Log.e(BaseWidgetProvider.TAG, "", ex);
 		}
 		return data;
 	}
 
 
 	// NOTE: further overridden
-	protected boolean getAANoAnimState(WidgetUpdateData data, WidgetContext widgetCtx) {
+	protected boolean getAANoAnimState(final WidgetUpdateData data, final WidgetContext widgetCtx) {
 		if(data.albumArtNoAnim
 			   || widgetCtx.lastAATimeStamp == data.albumArtTimestamp
-			   || data.hasTrack && (data.flags & PowerampAPI.Track.Flags.FLAG_FIRST_IN_PLAYER_SESSION) != 0
+			   || data.hasTrack && 0 != (data.flags & PowerampAPI.Track.Flags.FLAG_FIRST_IN_PLAYER_SESSION)
 		) {
 
-			if(LOG) Log.w(TAG, "getAANoAnimState =>true data.albumArtNoAnim=" + data.albumArtNoAnim + " same ts=" + (widgetCtx.lastAATimeStamp == data.albumArtTimestamp) +
+			if(BaseWidgetProvider.LOG) Log.w(BaseWidgetProvider.TAG, "getAANoAnimState =>true data.albumArtNoAnim=" + data.albumArtNoAnim + " same ts=" + (widgetCtx.lastAATimeStamp == data.albumArtTimestamp) +
 					"  FLAG_FIRST_IN_PLAYER_SESSION=" + (data.flags & PowerampAPI.Track.Flags.FLAG_FIRST_IN_PLAYER_SESSION) + " bitmap=" + data.albumArtBitmap);
 
 			return true;
@@ -153,12 +155,12 @@ public abstract class BaseWidgetProvider extends AppWidgetProvider implements
 	}
 
 
-	public static String getReadable(String title, String unknown) {
-		return getReadable(title, unknown, false);
+	public static String getReadable(final String title, final String unknown) {
+		return BaseWidgetProvider.getReadable(title, unknown, false);
 	}
 	
-	public static String getReadable(String title, String unknown, boolean allowEmpty) {
-		if(title != null && (allowEmpty || title.length() > 0)) {
+	public static String getReadable(final String title, final String unknown, final boolean allowEmpty) {
+		if(null != title && (allowEmpty || 0 < title.length())) {
 			return title;
 		}
 		return unknown;

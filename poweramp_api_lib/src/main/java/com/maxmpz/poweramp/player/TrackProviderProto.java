@@ -61,10 +61,10 @@ public class TrackProviderProto implements AutoCloseable {
 	private static final int MAX_PACKET_HEADER_SIZE = 12;
 
 	/** Header(12) + fileLength(8) + size(4) + */
-	private static final int INITIAL_PACKET_SIZE = MAX_PACKET_HEADER_SIZE + 8 + 4;
+	private static final int INITIAL_PACKET_SIZE = TrackProviderProto.MAX_PACKET_HEADER_SIZE + 8 + 4;
 
 	/** Index of the first data byte in the packet */
-	private static final int PACKET_DATA_IX = MAX_PACKET_HEADER_SIZE;
+	private static final int PACKET_DATA_IX = TrackProviderProto.MAX_PACKET_HEADER_SIZE;
 
 	/** Index of the data size (short) */
 	private static final int PACKET_DATA_SIZE_IX = 6;
@@ -88,7 +88,7 @@ public class TrackProviderProto implements AutoCloseable {
 	/** Buffer for header + some extra space for few small packet types */
 	private final @NonNull ByteBuffer mHeaderBuffer;
 	private final long mFileLength;
-	private int mState = STATE_INITIAL;
+	private int mState = TrackProviderProto.STATE_INITIAL;
 	private final StructPollfd @NonNull[] mStructPollFds;
 	private final @NonNull SeekRequest mTempSeekRequest = new SeekRequest();
 
@@ -96,11 +96,11 @@ public class TrackProviderProto implements AutoCloseable {
 	/** Raised if we failed with the connection/action and can't continue anymore */
 	@SuppressWarnings("serial")
 	public static class TrackProviderProtoException extends RuntimeException {
-		public TrackProviderProtoException(Throwable ex) {
+		public TrackProviderProtoException(final Throwable ex) {
 			super(ex);
 		}
 
-		public TrackProviderProtoException(String msg) {
+		public TrackProviderProtoException(final String msg) {
 			super(msg);
 		}
 	}
@@ -108,7 +108,7 @@ public class TrackProviderProto implements AutoCloseable {
 	/** Raised when connection is closed by Poweramp */
 	@SuppressWarnings("serial")
 	public static class TrackProviderProtoClosed extends RuntimeException {
-		public TrackProviderProtoClosed(Throwable ex) {
+		public TrackProviderProtoClosed(final Throwable ex) {
 			super(ex);
 		}
 	}
@@ -128,7 +128,7 @@ public class TrackProviderProto implements AutoCloseable {
 
 		@Override
 		public String toString() {
-			return super.toString() + " offsetBytes=" + offsetBytes + " ms=" + ms;
+			return super.toString() + " offsetBytes=" + this.offsetBytes + " ms=" + this.ms;
 		}
 	}
 
@@ -138,56 +138,56 @@ public class TrackProviderProto implements AutoCloseable {
 	 * @param fileLength the actual total length of the track being played
 	 */
 	@SuppressLint("NewApi")
-	public TrackProviderProto(@NonNull ParcelFileDescriptor pfd, long fileLength) {
-		if(fileLength <= 0) throw new IllegalArgumentException("bad fileLength=" + fileLength);
-		FileDescriptor socket = pfd.getFileDescriptor();
+	public TrackProviderProto(@NonNull final ParcelFileDescriptor pfd, final long fileLength) {
+		if(0 >= fileLength) throw new IllegalArgumentException("bad fileLength=" + fileLength);
+		final FileDescriptor socket = pfd.getFileDescriptor();
 		try {
-			if(socket == null || !OsConstants.S_ISSOCK(Os.fstat(socket).st_mode)) throw new IllegalArgumentException("bad pfd=" + pfd);
-		} catch(ErrnoException ex) {
+			if(null == socket || !OsConstants.S_ISSOCK(Os.fstat(socket).st_mode)) throw new IllegalArgumentException("bad pfd=" + pfd);
+		} catch(final ErrnoException ex) {
 			throw new TrackProviderProtoException(ex);
 		}
-		mSocket = socket;
-		mFileLength = fileLength;
+        this.mSocket = socket;
+        this.mFileLength = fileLength;
 
-		ByteBuffer headerBuffer = ByteBuffer.allocateDirect(INITIAL_PACKET_SIZE);
-		if(headerBuffer == null) throw new TrackProviderProtoException("headerBuffer");
-		mHeaderBuffer = headerBuffer;
-		mHeaderBuffer.order(ByteOrder.nativeOrder());
+		final ByteBuffer headerBuffer = ByteBuffer.allocateDirect(TrackProviderProto.INITIAL_PACKET_SIZE);
+		if(null == headerBuffer) throw new TrackProviderProtoException("headerBuffer");
+        this.mHeaderBuffer = headerBuffer;
+        this.mHeaderBuffer.order(ByteOrder.nativeOrder());
 
-		mStructPollFds = new StructPollfd[] {
+        this.mStructPollFds = new StructPollfd[] {
 			new StructPollfd()
 		};
-		mStructPollFds[0].fd = mSocket;
-		mStructPollFds[0].events = (short)OsConstants.POLLIN;
+        this.mStructPollFds[0].fd = this.mSocket;
+        this.mStructPollFds[0].events = (short)OsConstants.POLLIN;
 	}
 
 	@Override
 	public void close() {
-		if(LOG) Log.w(TAG, "close");
-		if(DEBUG_CHECKS && mState == STATE_CLOSED) throw new AssertionError();
-		if(mState != STATE_CLOSED) {
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "close");
+		if(TrackProviderProto.DEBUG_CHECKS && STATE_CLOSED == mState) throw new AssertionError();
+		if(STATE_CLOSED != mState) {
 			try {
-				Os.shutdown(mSocket, 0);
-			} catch(ErrnoException ex) {
-				Log.e(TAG, "", ex);
+				Os.shutdown(this.mSocket, 0);
+			} catch(final ErrnoException ex) {
+				Log.e(TrackProviderProto.TAG, "", ex);
 			}
 			try {
-				Os.close(mSocket);
-			} catch(ErrnoException ex) {
-				Log.e(TAG, "", ex);
+				Os.close(this.mSocket);
+			} catch(final ErrnoException ex) {
+				Log.e(TrackProviderProto.TAG, "", ex);
 			}
-			mState = STATE_CLOSED;
-			if(LOG) Log.w(TAG, "close OK");
+            this.mState = TrackProviderProto.STATE_CLOSED;
+			if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "close OK");
 		}
 	}
 
 	/** Prepares packet header buffer */
-	private @NonNull ByteBuffer preparePacketHeader(short packetType, int dataSize) {
-		ByteBuffer buf = mHeaderBuffer;
+	private @NonNull ByteBuffer preparePacketHeader(final short packetType, final int dataSize) {
+		final ByteBuffer buf = this.mHeaderBuffer;
 		buf.clear();
-		buf.putInt(PACKET_TAG);
+		buf.putInt(TrackProviderProto.PACKET_TAG);
 		buf.putShort(packetType);
-		if(DEBUG_CHECKS && dataSize < 0 || dataSize > MAX_DATA_SIZE) throw new AssertionError(dataSize);
+		if(TrackProviderProto.DEBUG_CHECKS && 0 > dataSize || MAX_DATA_SIZE < dataSize) throw new AssertionError(dataSize);
 		buf.putShort((short)dataSize);
 		buf.putInt(0);
 		return buf;
@@ -195,27 +195,27 @@ public class TrackProviderProto implements AutoCloseable {
 
 	/** Send the header required to be sent after the socket is connected */
 	public void sendHeader() {
-		if(LOG) Log.w(TAG, "sendHeader");
-		if(mState == STATE_INITIAL) {
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendHeader");
+		if(STATE_INITIAL == mState) {
 			try {
-				ByteBuffer buf = preparePacketHeader(PACKET_TYPE_HEADER, LONG_BYTES + INTEGER_BYTES);
-				buf.putLong(mFileLength);
-				buf.putInt(MAX_DATA_SIZE);
+				final ByteBuffer buf = this.preparePacketHeader(TrackProviderProto.PACKET_TYPE_HEADER, TrackProviderProto.LONG_BYTES + TrackProviderProto.INTEGER_BYTES);
+				buf.putLong(this.mFileLength);
+				buf.putInt(TrackProviderProto.MAX_DATA_SIZE);
 				buf.flip();
 
 				while(buf.hasRemaining()) {
-					int res = Os.sendto(mSocket, buf, 0, null, 0); // sendto updates buffer position
-					if(Build.VERSION.SDK_INT == 21) maybeUpdateBufferPosition(buf, res);
+					final int res = Os.sendto(this.mSocket, buf, 0, null, 0); // sendto updates buffer position
+					if(21 == Build.VERSION.SDK_INT) TrackProviderProto.maybeUpdateBufferPosition(buf, res);
 				}
 
-				mState = STATE_DATA;
-				if(LOG) Log.w(TAG, "sendHeader OK");
+                this.mState = TrackProviderProto.STATE_DATA;
+				if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendHeader OK");
 
-			} catch(ErrnoException|SocketException ex) {
-				if(LOG) Log.e(TAG, "", ex);
+			} catch(final ErrnoException | SocketException ex) {
+				if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 				throw new TrackProviderProtoException(ex);
 			}
-		} else if(DEBUG_CHECKS) throw new AssertionError(mState);
+		} else if(TrackProviderProto.DEBUG_CHECKS) throw new AssertionError(this.mState);
 	}
 
 	/**
@@ -229,12 +229,12 @@ public class TrackProviderProto implements AutoCloseable {
 	 * @param data buffer to send. Should be properly flipped prior sending
 	 * @return request for the new seek position, or INVALID_SEEK_POS(==Long.MIN_VALUE) if none requested
 	 */
-	public long sendData(@NonNull ByteBuffer data) {
-		SeekRequest request = sendData2(data);
-		if(request != null) {
+	public long sendData(@NonNull final ByteBuffer data) {
+		final SeekRequest request = this.sendData2(data);
+		if(null != request) {
 			return request.offsetBytes;
 		}
-		return INVALID_SEEK_POS;
+		return TrackProviderProto.INVALID_SEEK_POS;
 	}
 
 	/**
@@ -248,62 +248,62 @@ public class TrackProviderProto implements AutoCloseable {
 	 * @param data buffer to send. Should be properly flipped prior sending
 	 * @return request for the new seek position, or null if none requested
 	 */
-	public @Nullable SeekRequest sendData2(@NonNull ByteBuffer data) {
-		if(LOG) Log.w(TAG, "sendData2 data.remaining=" + data.remaining());
-		if(mState == STATE_DATA) {
+	public @Nullable SeekRequest sendData2(@NonNull final ByteBuffer data) {
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendData2 data.remaining=" + data.remaining());
+		if(STATE_DATA == mState) {
 			@SuppressWarnings("unused")
 			int packetsSent = 0;
-			final int originalDataLimit = data.limit(); // Keep original limit as we'll modify it to send up to MAX_DATA_SIZE bytes per packet
+			int originalDataLimit = data.limit(); // Keep original limit as we'll modify it to send up to MAX_DATA_SIZE bytes per packet
 			while(data.hasRemaining()) {
 				try {
 					int size = data.remaining();
-					if(size > MAX_DATA_SIZE) { // Sending up to MAX_DATA_SIZE
-						size = MAX_DATA_SIZE;
+					if(MAX_DATA_SIZE < size) { // Sending up to MAX_DATA_SIZE
+						size = TrackProviderProto.MAX_DATA_SIZE;
 					}
 					data.limit(data.position() + size);
 
-					ByteBuffer buf = preparePacketHeader(PACKET_TYPE_DATA, size);
+					final ByteBuffer buf = this.preparePacketHeader(TrackProviderProto.PACKET_TYPE_DATA, size);
 					buf.flip();
 					while(buf.hasRemaining()) {
-						int res = Os.sendto(mSocket, buf, 0, null, 0);
-						if(Build.VERSION.SDK_INT == 21) maybeUpdateBufferPosition(buf, res);
+						final int res = Os.sendto(this.mSocket, buf, 0, null, 0);
+						if(21 == Build.VERSION.SDK_INT) TrackProviderProto.maybeUpdateBufferPosition(buf, res);
 					}
 					while(data.hasRemaining()) {
-						int res = Os.sendto(mSocket, data, 0, null, 0); // data.position changed by # of bytes actually sent
-						if(Build.VERSION.SDK_INT == 21) maybeUpdateBufferPosition(data, res);
+						final int res = Os.sendto(this.mSocket, data, 0, null, 0); // data.position changed by # of bytes actually sent
+						if(21 == Build.VERSION.SDK_INT) TrackProviderProto.maybeUpdateBufferPosition(data, res);
 					}
 					packetsSent++;
 
 					buf.clear();
 
-				} catch(ErrnoException ex) {
+				} catch(final ErrnoException ex) {
 					if(ex.errno == OsConstants.ECONNRESET || ex.errno == OsConstants.EPIPE) throw new TrackProviderProtoClosed(ex);
-					if(LOG) Log.e(TAG, "", ex);
+					if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 					throw new TrackProviderProtoException(ex);
-				} catch(SocketException ex) {
-					if(LOG) Log.e(TAG, "", ex);
+				} catch(final SocketException ex) {
+					if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 					throw new TrackProviderProtoException(ex);
 				} finally {
 					data.limit(originalDataLimit); //  Restore limit
 				}
 
 				try {
-					int fdsReady = Os.poll(mStructPollFds, 0); // Check for possible incoming packet header
+					final int fdsReady = Os.poll(this.mStructPollFds, 0); // Check for possible incoming packet header
 
-					if(fdsReady == 1) {
-						SeekRequest seekPosEncoded = readSeekRequest(true); // This shouldn't block as we checked we have some incoming data
-						if(seekPosEncoded != null) {
+					if(1 == fdsReady) {
+						final SeekRequest seekPosEncoded = this.readSeekRequest(true); // This shouldn't block as we checked we have some incoming data
+						if(null != seekPosEncoded) {
 							return seekPosEncoded; // Got valid seek request, return it
 						}
 					}
 
-				} catch(ErrnoException ex) {
-					if(LOG) Log.e(TAG, "", ex);
+				} catch(final ErrnoException ex) {
+					if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 				}
 			}
-			if(LOG) Log.w(TAG, "sendDataPackets OK packetsSent=" + packetsSent);
+			if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendDataPackets OK packetsSent=" + packetsSent);
 
-		} else if(DEBUG_CHECKS) throw new AssertionError(mState);
+		} else if(TrackProviderProto.DEBUG_CHECKS) throw new AssertionError(this.mState);
 
 		return null;
 	}
@@ -313,15 +313,15 @@ public class TrackProviderProto implements AutoCloseable {
 	 * @return request for the new seek position, or INVALID_SEEK_POS(==Long.MIN_VALUE) if none requested, socket closed, error happened, etc.
 	 */
 	public long sendEOFAndWaitForSeekOrClose() {
-		if(LOG) Log.w(TAG, "sendEOFAndWaitForSeekOrClose");
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendEOFAndWaitForSeekOrClose");
 
-		SeekRequest seekRequest = sendEOFAndWaitForSeekOrClose2();
-		if(seekRequest != null) {
-			if(LOG) Log.w(TAG, "sendEOFAndWaitForSeekOrClose got seek=>" + seekRequest.offsetBytes);
+		final SeekRequest seekRequest = this.sendEOFAndWaitForSeekOrClose2();
+		if(null != seekRequest) {
+			if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendEOFAndWaitForSeekOrClose got seek=>" + seekRequest.offsetBytes);
 			return seekRequest.offsetBytes;
 		}
-		if(LOG) Log.w(TAG, "sendEOFAndWaitForSeekOrClose DONE");
-		return INVALID_SEEK_POS;
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendEOFAndWaitForSeekOrClose DONE");
+		return TrackProviderProto.INVALID_SEEK_POS;
 	}
 
 	/**
@@ -329,24 +329,24 @@ public class TrackProviderProto implements AutoCloseable {
 	 * @return request for the new seek position, or null if none requested, socket closed, error happened, etc.
 	 */
 	public @Nullable SeekRequest sendEOFAndWaitForSeekOrClose2() {
-		if(LOG) Log.w(TAG, "waitForSeekOrClose");
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "waitForSeekOrClose");
 
 		try {
 			// Send EOF (empty data buffer)
-			ByteBuffer buf = preparePacketHeader(PACKET_TYPE_DATA, 0);
+			final ByteBuffer buf = this.preparePacketHeader(TrackProviderProto.PACKET_TYPE_DATA, 0);
 			buf.flip();
 			while(buf.hasRemaining()) {
-				int res = Os.sendto(mSocket, buf, 0, null, 0);
-				if(Build.VERSION.SDK_INT == 21) maybeUpdateBufferPosition(buf, res);
+				final int res = Os.sendto(this.mSocket, buf, 0, null, 0);
+				if(21 == Build.VERSION.SDK_INT) TrackProviderProto.maybeUpdateBufferPosition(buf, res);
 			}
-		} catch(ErrnoException|SocketException ex) {
-			if(LOG) Log.e(TAG, "", ex);
+		} catch(final ErrnoException | SocketException ex) {
+			if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 			throw new TrackProviderProtoException(ex);
 		}
 
 		try {
-			return readSeekRequest(false);
-		} catch(TrackProviderProtoException ex) {
+			return this.readSeekRequest(false);
+		} catch(final TrackProviderProtoException ex) {
 			return null;
 		}
 	}
@@ -355,55 +355,55 @@ public class TrackProviderProto implements AutoCloseable {
 	 * Try to read Poweramp sends seek request. Blocks until socket has some data
 	 * @return request for the new seek position, or null if none requested
 	 */
-	private @Nullable SeekRequest readSeekRequest(boolean noBlock) {
-		if(LOG) Log.w(TAG, "readSeekRequest");
+	private @Nullable SeekRequest readSeekRequest(final boolean noBlock) {
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "readSeekRequest");
 		try {
-			ByteBuffer buf = mHeaderBuffer;
+			final ByteBuffer buf = this.mHeaderBuffer;
 			buf.clear();
-			buf.limit(MAX_PACKET_HEADER_SIZE); // Read just header
+			buf.limit(TrackProviderProto.MAX_PACKET_HEADER_SIZE); // Read just header
 
-			int res = Os.recvfrom(mSocket, buf, 0, null);
-			if(Build.VERSION.SDK_INT == 21) maybeUpdateBufferPosition(buf, res);
+			int res = Os.recvfrom(this.mSocket, buf, 0, null);
+			if(21 == Build.VERSION.SDK_INT) TrackProviderProto.maybeUpdateBufferPosition(buf, res);
 
-			if(res == MAX_PACKET_HEADER_SIZE) {
-				int type = getPacketType(buf);
-				int dataSize = getPacketDataSize(buf);
-				if(type == PACKET_TYPE_SEEK && dataSize >= LONG_BYTES) {
-					if(LOG) Log.w(TAG, "readSeekRequest got PACKET_TYPE_SEEK dataSize=>" + dataSize);
+			if(MAX_PACKET_HEADER_SIZE == res) {
+				final int type = TrackProviderProto.getPacketType(buf);
+				final int dataSize = TrackProviderProto.getPacketDataSize(buf);
+				if(PACKET_TYPE_SEEK == type && LONG_BYTES <= dataSize) {
+					if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "readSeekRequest got PACKET_TYPE_SEEK dataSize=>" + dataSize);
 					buf.limit(buf.limit() + dataSize);
 
-					res = Os.recvfrom(mSocket, buf, noBlock ? OsConstants.O_NONBLOCK : 0, null); // Read seek position
-					if(Build.VERSION.SDK_INT == 21) maybeUpdateBufferPosition(buf, res);
+					res = Os.recvfrom(this.mSocket, buf, noBlock ? OsConstants.O_NONBLOCK : 0, null); // Read seek position
+					if(21 == Build.VERSION.SDK_INT) TrackProviderProto.maybeUpdateBufferPosition(buf, res);
 
-					if(res >= LONG_BYTES) {
-						SeekRequest seekRequest = mTempSeekRequest;
-						seekRequest.offsetBytes = buf.getLong(PACKET_DATA_IX);
-						if(LOG) Log.w(TAG, "readSeekRequest got offsetBytes=>" + seekRequest.offsetBytes);
-						if(res >= LONG_BYTES + INTEGER_BYTES) {
-							seekRequest.ms = buf.getInt(PACKET_DATA_IX + LONG_BYTES);
-							if(LOG) Log.w(TAG, "readSeekRequest got ms=>" + seekRequest.ms);
+					if(LONG_BYTES <= res) {
+						final SeekRequest seekRequest = this.mTempSeekRequest;
+						seekRequest.offsetBytes = buf.getLong(TrackProviderProto.PACKET_DATA_IX);
+						if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "readSeekRequest got offsetBytes=>" + seekRequest.offsetBytes);
+						if(LONG_BYTES + TrackProviderProto.INTEGER_BYTES <= res) {
+							seekRequest.ms = buf.getInt(TrackProviderProto.PACKET_DATA_IX + TrackProviderProto.LONG_BYTES);
+							if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "readSeekRequest got ms=>" + seekRequest.ms);
 						} else {
 							seekRequest.ms = Integer.MIN_VALUE;
 						}
 						return seekRequest;
 
-					} else Log.e(TAG, "readSeekRequest FAIL recvfrom data res=" + res);
+					} else Log.e(TrackProviderProto.TAG, "readSeekRequest FAIL recvfrom data res=" + res);
 				} else
-					Log.e(TAG, "readSeekRequest FAIL recvfrom type=" + type + " dataSize=" + dataSize);
-			} else if(res == 0) {
+					Log.e(TrackProviderProto.TAG, "readSeekRequest FAIL recvfrom type=" + type + " dataSize=" + dataSize);
+			} else if(0 == res) {
 				// EOF
-				if(LOG) Log.w(TAG, "readSeekRequest EOF");
+				if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "readSeekRequest EOF");
 				return null;
-			} else Log.e(TAG, "readSeekRequest FAIL recvfrom res=" + res);
-		} catch(ErrnoException ex) {
-			if(LOG) Log.e(TAG, "", ex);
+			} else Log.e(TrackProviderProto.TAG, "readSeekRequest FAIL recvfrom res=" + res);
+		} catch(final ErrnoException ex) {
+			if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 			if(ex.errno == OsConstants.ECONNRESET || ex.errno == OsConstants.EPIPE) throw new TrackProviderProtoClosed(ex);
 			if(ex.errno == OsConstants.EAGAIN) { // Timed out
 				return null;
 			}
 			throw new TrackProviderProtoException(ex);
-		} catch(SocketException ex) {
-			if(LOG) Log.e(TAG, "", ex);
+		} catch(final SocketException ex) {
+			if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 			throw new TrackProviderProtoException(ex);
 		}
 		return null;
@@ -414,18 +414,18 @@ public class TrackProviderProto implements AutoCloseable {
 	 * @param newPos if >= 0 - indicates a new byte position within the track, or <0 if the seek failed
 	 */
 
-	public void sendSeekResult(long newPos) {
-		if(LOG) Log.w(TAG, "sendSeekResult newPos=" + newPos);
-		ByteBuffer buf = preparePacketHeader(PACKET_TYPE_SEEK_RES, LONG_BYTES);
+	public void sendSeekResult(final long newPos) {
+		if(TrackProviderProto.LOG) Log.w(TrackProviderProto.TAG, "sendSeekResult newPos=" + newPos);
+		final ByteBuffer buf = this.preparePacketHeader(TrackProviderProto.PACKET_TYPE_SEEK_RES, TrackProviderProto.LONG_BYTES);
 		buf.putLong(newPos);
 		buf.flip();
 		try {
 			while(buf.hasRemaining()) {
-				int res = Os.sendto(mSocket, buf, 0, null, 0);
-				if(Build.VERSION.SDK_INT == 21) maybeUpdateBufferPosition(buf, res);
+				final int res = Os.sendto(this.mSocket, buf, 0, null, 0);
+				if(21 == Build.VERSION.SDK_INT) TrackProviderProto.maybeUpdateBufferPosition(buf, res);
 			}
-		} catch(ErrnoException|SocketException ex) {
-			if(LOG) Log.e(TAG, "", ex);
+		} catch(final ErrnoException | SocketException ex) {
+			if(TrackProviderProto.LOG) Log.e(TrackProviderProto.TAG, "", ex);
 			throw new TrackProviderProtoException(ex);
 		}
 	}
@@ -433,12 +433,12 @@ public class TrackProviderProto implements AutoCloseable {
 	/**
 	 * @return packetType > 0, or -1 on failure
 	 */
-	private static int getPacketType(@NonNull ByteBuffer buf) {
+	private static int getPacketType(@NonNull final ByteBuffer buf) {
 		// Packet header is TAG(4) + PACKET_TYPE(2) + DATA_SIZE(2) + DATA_SERIAL(4) => 12
-		if(buf.limit() >= MAX_PACKET_HEADER_SIZE && buf.getInt(0) ==  PACKET_TAG) {
-			int type = buf.getShort(4);
-			int dataSize = getPacketDataSize(buf);
-			if(type > 0 && dataSize > 0) {
+		if(MAX_PACKET_HEADER_SIZE <= buf.limit() && PACKET_TAG == buf.getInt(0)) {
+			final int type = buf.getShort(4);
+			final int dataSize = TrackProviderProto.getPacketDataSize(buf);
+			if(0 < type && 0 < dataSize) {
 				return type;
 			}
 		}
@@ -448,13 +448,13 @@ public class TrackProviderProto implements AutoCloseable {
 	/**
 	 * @return packet data size
 	 */
-	private static int getPacketDataSize(@NonNull ByteBuffer buf) {
-		return buf.getShort(PACKET_DATA_SIZE_IX);
+	private static int getPacketDataSize(@NonNull final ByteBuffer buf) {
+		return buf.getShort(TrackProviderProto.PACKET_DATA_SIZE_IX);
 	}
 
 	/** Required for Android 5.0.0 which doesn't update buffers */
-	private static void maybeUpdateBufferPosition(ByteBuffer buffer, int bytesReadOrWritten) {
-		if(bytesReadOrWritten > 0) {
+	private static void maybeUpdateBufferPosition(final ByteBuffer buffer, final int bytesReadOrWritten) {
+		if(0 < bytesReadOrWritten) {
 			buffer.position(bytesReadOrWritten + buffer.position());
 		}
 	}

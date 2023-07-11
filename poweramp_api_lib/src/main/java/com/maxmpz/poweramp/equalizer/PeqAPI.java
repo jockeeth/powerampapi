@@ -2,8 +2,9 @@ package com.maxmpz.poweramp.equalizer;
 
 import com.maxmpz.poweramp.player.PowerampAPI;
 
-public final class PeqAPI {
-	public static final String ACTION_ASK_FOR_DATA_PERMISSION = PowerampAPI.ACTION_ASK_FOR_DATA_PERMISSION;
+public enum PeqAPI {
+    ;
+    public static final String ACTION_ASK_FOR_DATA_PERMISSION = PowerampAPI.ACTION_ASK_FOR_DATA_PERMISSION;
 	public static final String ACTION_RELOAD_DATA = PowerampAPI.ACTION_RELOAD_DATA;
 	
 	public static final String ACTION_API_COMMAND = "com.maxmpz.equalizer.API_COMMAND";
@@ -38,14 +39,15 @@ public final class PeqAPI {
 	 */
 	public static final String EXTRA_PRESETS = "presets";
 	
-	public static final class Commands {
-		public static final int STOP_SERVICE = PowerampAPI.Commands.STOP_SERVICE;
+	public enum Commands {
+        ;
+        public static final int STOP_SERVICE = PowerampAPI.Commands.STOP_SERVICE;
 	}
 
 	/** @see PowerampAPI#CALL_SET_PREFERENCE */
 	public static final String CALL_SET_PREFERENCE = PowerampAPI.CALL_SET_PREFERENCE;
 
-	public final static class MilkScanner extends PowerampAPI.MilkScanner {}
+	public static final class MilkScanner extends PowerampAPI.MilkScanner {}
 	
 	
 	/**
